@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="dist/css/output.css">
+    <link rel="stylesheet" href="./../dist/css/output.css">
     <title>Document</title>
 </head>
 <body class="bg-gray-50 dark:bg-neutral-900">
@@ -2231,10 +2231,10 @@
 
   <!-- JS Implementing Plugins -->
 
-    <script src="./node_modules/preline/dist/index.js"></script>
-    <script src="./node_modules/lodash/lodash.min.js"></script>
-    <script src="./node_modules/apexcharts/dist/apexcharts.min.js"></script>
-    <script src="./node_modules/preline/dist/helper-apexcharts.js"></script>
+    <script src="./../node_modules/preline/dist/index.js"></script>
+    <script src="./../node_modules/lodash/lodash.min.js"></script>
+    <script src="./../node_modules/apexcharts/dist/apexcharts.min.js"></script>
+    <script src="./../node_modules/preline/dist/helper-apexcharts.js"></script>
 
     <script>
       window.addEventListener("load", () => {
@@ -2628,6 +2628,6 @@
 
 
 
-    <script src="./node_modules/preline/dist/preline.js"></script>
+    <script src="./../node_modules/preline/dist/preline.js"></script>
 </body>
 </html>
