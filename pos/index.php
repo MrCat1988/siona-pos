@@ -2,7 +2,7 @@
     // MODELS AND CONTROLLERS REQUIRED
     // CONTROLLERS
     require_once "controllers/template.controller.php";
-    // require_once "controllers/version.controller.php";
+    require_once "controllers/version.controller.php";
 
 
     // require_once "controllers/users.controller.php";
