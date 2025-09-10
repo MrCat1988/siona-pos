@@ -12,8 +12,10 @@
   "dependencies": {
     "@tailwindcss/cli": "^4.1.13",
     "apexcharts": "^5.3.5",
+    "datatables.net-dt": "^2.3.4",
     "lodash": "^4.17.21",
     "preline": "^3.2.3",
+    "sweetalert2": "^11.23.0",
     "tailwindcss": "^4.1.13"
   },
   "devDependencies": {

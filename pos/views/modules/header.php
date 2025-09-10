@@ -69,8 +69,8 @@
 
                         <div class="hs-dropdown-menu transition-[opacity,margin] duration hs-dropdown-open:opacity-100 opacity-0 hidden min-w-60 bg-white shadow-md rounded-lg mt-2 dark:bg-neutral-800 dark:border dark:border-neutral-700 dark:divide-neutral-700 after:h-4 after:absolute after:-bottom-4 after:start-0 after:w-full before:h-4 before:absolute before:-top-4 before:start-0 before:w-full" role="menu" aria-orientation="vertical" aria-labelledby="hs-dropdown-account">
                             <div class="py-3 px-5 bg-gray-100 rounded-t-lg dark:bg-neutral-700">
-                                <p class="text-sm text-gray-500 dark:text-neutral-500">Signed in as</p>
-                                <p class="text-sm font-medium text-gray-800 dark:text-neutral-200">james@site.com</p>
+                                <p class="text-sm text-gray-500 dark:text-neutral-500">Bienvenido/a</p>
+                                <p class="text-sm font-medium text-gray-800 dark:text-neutral-200"><?php echo $_SESSION['usuario_email']; ?></p>
                             </div>
                             <div class="p-1.5 space-y-0.5">
                                 <a class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-hidden focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700 dark:focus:text-neutral-300" href="#">
@@ -106,11 +106,18 @@
                                     Team Account
                                 </a>
 
+                                <a class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-red-700 hover:bg-red-50 focus:outline-hidden focus:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20 dark:hover:text-red-300 dark:focus:bg-red-950/20 dark:focus:text-red-300" href="#" onclick="logout()">
+                                    <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                    </svg>
+                                    Cerrar Sesión
+                                </a>
 
-                                <div class="py-3 px-5 bg-gray-100 rounded-lg dark:bg-neutral-700">
-                                    <!-- <p class="text-sm text-gray-500 dark:text-neutral-500">Signed in as</p>
-                                <p class="text-sm font-medium text-gray-800 dark:text-neutral-200">james@site.com</p> -->
-                                    <!-- Switch/Toggle -->
+
+
+
+                            <!-- Switch/Toggle -->
+                                <!-- <div class="py-3 px-5 bg-gray-100 rounded-lg dark:bg-neutral-700">
                                     <div class="flex items-center gap-x-0.5">
                                         <button type="button" class="hs-dark-mode hs-dark-mode-active:hidden flex shrink-0 justify-center items-center gap-x-1 text-xs text-gray-500 hover:text-gray-800 focus:outline-hidden focus:text-gray-800 dark:text-neutral-400 dark:hover:text-neutral-200 dark:focus:text-neutral-200" data-hs-theme-click-value="dark">
                                             <svg class="shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -133,8 +140,8 @@
                                             Switch to Light
                                         </button>
                                     </div>
-                                    <!-- End Switch/Toggle -->
-                                </div>
+                                </div> -->
+                            <!-- End Switch/Toggle -->
 
 
                             </div>

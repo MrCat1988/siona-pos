@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./../dist/css/output.css">
     <!-- DATATABLE CSS -->
-    <link rel="stylesheet" href="//cdn.datatables.net/2.3.4/css/dataTables.dataTables.min.css">
+    <!-- <link rel="stylesheet" href="//cdn.datatables.net/2.3.4/css/dataTables.dataTables.min.css"> -->
+    <link rel="stylesheet" href="./../node_modules/datatables.net-dt/css/dataTables.dataTables.min.css">
 
 
     <title>Sioa POS</title>
@@ -17,13 +18,28 @@
 
     <?php
 
+    session_start();
 
-if (isset($_SESSION["login"]) && $_SESSION["login"] == "logged") {
+    // Generar CSRF token para toda la aplicación
+    if (!isset($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+
+    // 1. HTTPS obligatorio para login
+    if (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
+        if (strpos($_SERVER['REQUEST_URI'], 'login') !== false || !isset($_SESSION["login_status"])) {
+            $redirect_url = "https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+            header("Location: $redirect_url", true, 301);
+            exit();
+        }
+    }
+
+    if (isset($_SESSION["login_status"]) && $_SESSION["login_status"] == true) {
         include("modules/header.php");
         include("modules/breadcrumb.php");
         include("modules/sidebar-menu.php");
         // include("modules/content.php");
-    
+
         if (isset($_GET["route"])) {
             if (
                 $_GET["route"] == 'usuarios' ||
@@ -36,7 +52,7 @@ if (isset($_SESSION["login"]) && $_SESSION["login"] == "logged") {
                 include "modules/404.php";
             }
         } else {
-            // include "modules/home.php";
+            include "modules/content.php";
         }
         // ================================================================
         // =============== INCLUDE MODALS TO USE IN GENERAL ===============
@@ -62,8 +78,11 @@ if (isset($_SESSION["login"]) && $_SESSION["login"] == "logged") {
 
     <!-- JQUERY -->
     <script src="./../dist/js/jquery-3.7.1.min.js"></script>
+    <!-- SWEET ALERT 2 -->
+    <script src="./../node_modules/sweetalert2/dist/sweetalert2.all.min.js"></script>
     <!-- DATATBLE JS -->
-    <script src="//cdn.datatables.net/2.3.4/js/dataTables.min.js"></script>
+    <script src="./../node_modules/datatables.net/js/dataTables.min.js"></script>
+    <!-- <script src="//cdn.datatables.net/2.3.4/js/dataTables.min.js"></script> -->
     <!-- JS Implementing Plugins -->
     <script src="./../node_modules/preline/dist/index.js"></script>
     <script src="./../node_modules/lodash/lodash.min.js"></script>
