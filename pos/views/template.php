@@ -22,7 +22,8 @@
     
         if (isset($_GET["route"])) {
             if (
-                $_GET["route"] == 'usuarios'
+                $_GET["route"] == 'usuarios' ||
+                $_GET["route"] == 'content'
 
 
             ) {
