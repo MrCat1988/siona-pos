@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./../dist/css/output.css">
+    <!-- DATATABLE CSS -->
+    <link rel="stylesheet" href="//cdn.datatables.net/2.3.4/css/dataTables.dataTables.min.css">
+
+
     <title>Sioa POS</title>
 </head>
 
@@ -14,7 +18,7 @@
     <?php
 
 
-// if (isset($_SESSION["login"]) && $_SESSION["login"] == "logged") {
+if (isset($_SESSION["login"]) && $_SESSION["login"] == "logged") {
         include("modules/header.php");
         include("modules/breadcrumb.php");
         include("modules/sidebar-menu.php");
@@ -39,10 +43,10 @@
         // ================================================================
         // include "modules/general-modals.php";
         // include "modules/footer.php";
-    // } else {
+    } else {
 
-    //     include "modules/login.php";
-    // }
+        include "modules/login.php";
+    }
 
 
 
@@ -56,6 +60,10 @@
 
 
 
+    <!-- JQUERY -->
+    <script src="./../dist/js/jquery-3.7.1.min.js"></script>
+    <!-- DATATBLE JS -->
+    <script src="//cdn.datatables.net/2.3.4/js/dataTables.min.js"></script>
     <!-- JS Implementing Plugins -->
     <script src="./../node_modules/preline/dist/index.js"></script>
     <script src="./../node_modules/lodash/lodash.min.js"></script>
@@ -447,6 +455,9 @@
 
 
     <script src="./../node_modules/preline/dist/preline.js"></script>
+
+    <!-- CUSTOMS SCRIPTS -->
+    <script src="./views/js/usuarios.js"></script>
 
 </body>
 
