@@ -6,11 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./../dist/css/output.css">
     <!-- DATATABLE CSS -->
-    <!-- <link rel="stylesheet" href="//cdn.datatables.net/2.3.4/css/dataTables.dataTables.min.css"> -->
     <link rel="stylesheet" href="./../node_modules/datatables.net-dt/css/dataTables.dataTables.min.css">
+    <!-- <link rel="stylesheet" href="./../node_modules/datatables.net-responsive-dt/css/responsive.dataTables.min.css"> -->
+    <!-- USUARIOS CSS -->
+    <link rel="stylesheet" href="./views/css/usuarios.css">
+    <!-- TABLA USUARIOS CSS -->
+    <link rel="stylesheet" href="./views/css/usuarios-table.css">
 
 
-    <title>Sioa POS</title>
+    <title>Siona POS</title>
 </head>
 
 <body class="bg-gray-50 dark:bg-neutral-900">
@@ -35,6 +39,9 @@
     }
 
     if (isset($_SESSION["login_status"]) && $_SESSION["login_status"] == true) {
+        // Definir variables globales JavaScript para multitenant
+        echo "<script>window.TENANT_ID = " . (int)$_SESSION['tenant_id'] . ";</script>";
+        
         include("modules/header.php");
         include("modules/breadcrumb.php");
         include("modules/sidebar-menu.php");
@@ -82,12 +89,23 @@
     <script src="./../node_modules/sweetalert2/dist/sweetalert2.all.min.js"></script>
     <!-- DATATBLE JS -->
     <script src="./../node_modules/datatables.net/js/dataTables.min.js"></script>
-    <!-- <script src="//cdn.datatables.net/2.3.4/js/dataTables.min.js"></script> -->
+    <script src="./../node_modules/datatables.net-responsive/js/dataTables.responsive.min.js"></script>
     <!-- JS Implementing Plugins -->
     <script src="./../node_modules/preline/dist/index.js"></script>
     <script src="./../node_modules/lodash/lodash.min.js"></script>
     <script src="./../node_modules/apexcharts/dist/apexcharts.min.js"></script>
     <script src="./../node_modules/preline/dist/helper-apexcharts.js"></script>
+    
+    <!-- Fix para error de Preline -->
+    <script>
+        // Capturar y silenciar errores de Preline relacionados con keybindings
+        window.addEventListener('error', function(e) {
+            if (e.message && e.message.includes('reading \'length\'') && e.filename && e.filename.includes('preline')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    </script>
 
     <script>
         window.addEventListener("load", () => {
