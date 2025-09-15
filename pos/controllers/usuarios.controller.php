@@ -1,7 +1,34 @@
 <?php
 
 class UsuariosController {
-    
+
+    /**
+     * Función auxiliar para eliminar archivo de imagen del sistema
+     * @param string $rutaImagen Ruta relativa de la imagen (ej: "views/img/usuarios/tenant_1/imagen.jpg")
+     * @param string $contexto Contexto para logs (ej: "EditarUsuario", "EliminarUsuario")
+     * @return bool True si se eliminó exitosamente o no existía, False si hubo error
+     */
+    private static function eliminarImagenUsuario($rutaImagen, $contexto = "") {
+        if (empty($rutaImagen)) {
+            return true; // No hay imagen que eliminar
+        }
+
+        $rutaCompleta = __DIR__ . "/../" . $rutaImagen;
+
+        if (file_exists($rutaCompleta)) {
+            if (unlink($rutaCompleta)) {
+                error_log("$contexto - Imagen eliminada exitosamente: " . $rutaCompleta);
+                return true;
+            } else {
+                error_log("$contexto - ERROR: No se pudo eliminar imagen: " . $rutaCompleta);
+                return false;
+            }
+        } else {
+            error_log("$contexto - Imagen no existe en el sistema de archivos: " . $rutaCompleta);
+            return true; // Considerar éxito si el archivo no existe
+        }
+    }
+
     public static function login() {
         if ($_POST) {
             $email = $_POST['email'];
@@ -90,16 +117,31 @@ class UsuariosController {
                 echo json_encode(array("status" => "error", "message" => "Sesión no válida"));
                 return;
             }
-            
-            $usuarios = UsuariosModel::obtenerUsuarios($_SESSION['tenant_id']);
-            
-            if ($usuarios === false) {
+
+            // Obtener parámetros de paginación y filtros
+            $page = isset($_POST['page']) ? (int)$_POST['page'] : 1;
+            $limit = isset($_POST['limit']) ? (int)$_POST['limit'] : 6;
+            $estado = isset($_POST['estado']) && $_POST['estado'] !== '' ? (int)$_POST['estado'] : null;
+            $incluir_eliminados = isset($_POST['incluir_eliminados']) && $_POST['incluir_eliminados'] === 'true';
+
+            // Validar parámetros
+            if ($page < 1) $page = 1;
+            if ($limit < 1 || $limit > 50) $limit = 6; // Máximo 50 por página
+
+            // Debug logging para verificar tenant_id
+            error_log("obtenerUsuarios - tenant_id de sesión: " . $_SESSION['tenant_id']);
+            error_log("obtenerUsuarios - parámetros: page=$page, limit=$limit, estado=$estado, incluir_eliminados=" . ($incluir_eliminados ? 'true' : 'false'));
+
+            $resultado = UsuariosModel::obtenerUsuarios($_SESSION['tenant_id'], $page, $limit, $estado, $incluir_eliminados);
+
+            if ($resultado === false || !isset($resultado['usuarios'])) {
+                error_log("obtenerUsuarios - ERROR: Resultado inválido del modelo");
                 echo json_encode(array("status" => "error", "message" => "Error al consultar base de datos"));
                 return;
             }
-            
-            echo json_encode(array("status" => "success", "data" => $usuarios));
-            
+
+            echo json_encode(array("status" => "success", "data" => $resultado));
+
         } catch (Exception $e) {
             error_log("Error en obtenerUsuarios controller: " . $e->getMessage());
             echo json_encode(array("status" => "error", "message" => "Error interno del servidor"));
@@ -209,10 +251,17 @@ class UsuariosController {
                 }
             }
             
+            // Validar que el email no esté duplicado
+            $emailExiste = UsuariosModel::verificarEmailExiste($_POST['email'], $_SESSION['tenant_id']);
+            if ($emailExiste) {
+                echo json_encode(array("status" => "error", "message" => "Este email ya está registrado en el sistema"));
+                return;
+            }
+
             // Validar que la sucursal pertenezca al tenant del usuario actual
             $validacionSucursal = UsuariosModel::validarSucursalTenant($_POST['sucursal_id'], $_SESSION['tenant_id']);
             error_log("Validación sucursal - Sucursal ID: " . $_POST['sucursal_id'] . ", Tenant ID: " . $_SESSION['tenant_id'] . ", Válida: " . ($validacionSucursal ? 'Sí' : 'No'));
-            
+
             if (!$validacionSucursal) {
                 // Mostrar sucursales disponibles para debugging
                 $sucursalesDisponibles = UsuariosModel::obtenerSucursalesPorTenant($_SESSION['tenant_id']);
@@ -221,17 +270,33 @@ class UsuariosController {
                 return;
             }
             
+            // Manejar contraseña hasheada o texto plano
+            $password = $_POST['password'];
+            $is_hashed = isset($_POST['is_hashed']) && $_POST['is_hashed'] === 'true';
+
+            if ($is_hashed) {
+                // Si viene hasheada del cliente, necesitamos guardarla de forma compatible con loginUsuarioHashed
+                error_log("crearUsuario - Recibida contraseña hasheada del cliente");
+                // Para contraseñas hasheadas, usar un método de almacenamiento compatible
+                $password_to_store = $password; // El hash del cliente se guardará directamente
+            } else {
+                // Si viene en texto plano, usar el método normal
+                error_log("crearUsuario - Recibida contraseña en texto plano");
+                $password_to_store = $password;
+            }
+
             $datos = array(
                 "nombre" => $_POST['nombre'],
                 "cargo" => $_POST['cargo'],
                 "direccion" => $_POST['direccion'] ?? '',
                 "telefono" => $_POST['telefono'],
                 "email" => $_POST['email'],
-                "password" => $_POST['password'],
+                "password" => $password_to_store,
                 "rol" => $_POST['rol'],
                 "sucursal_id" => $_POST['sucursal_id'],
                 "thumbnail" => $thumbnail,
-                "tenant_id" => $_SESSION['tenant_id']
+                "tenant_id" => $_SESSION['tenant_id'],
+                "is_hashed" => $is_hashed
             );
             
             // Verificar antes de intentar crear
@@ -314,12 +379,108 @@ class UsuariosController {
         }
         
         if ($_POST) {
+            // Verificar que el usuario no se desactive a sí mismo
+            if ($_POST['idusuario'] == $_SESSION['usuario_id'] && $_POST['estado'] == '0') {
+                echo json_encode(array("status" => "error", "message" => "No puedes desactivar tu propio usuario"));
+                return;
+            }
+
             // Verificar email duplicado antes de editar (excluyendo el usuario actual)
             if (UsuariosModel::verificarEmailExiste($_POST['email'], $_SESSION['tenant_id'], $_POST['idusuario'])) {
                 echo json_encode(array("status" => "error", "message" => "Ya existe otro usuario con este email"));
                 return;
             }
-            
+
+            // Manejar subida de imagen con estructura multitenant (solo si se envía nueva imagen)
+            $thumbnail = null;
+            $imagenAnterior = null;
+            error_log("EditarUsuario - Procesando imagen - FILES: " . json_encode($_FILES));
+
+            // Si se va a subir nueva imagen, obtener la imagen anterior para eliminarla después
+            if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] == 0) {
+                // Obtener la imagen actual del usuario antes de la actualización
+                $usuarioActual = UsuariosModel::obtenerUsuario($_POST['idusuario'], $_SESSION['tenant_id']);
+                if ($usuarioActual && !empty($usuarioActual['thumbnail'])) {
+                    $imagenAnterior = $usuarioActual['thumbnail'];
+                    error_log("EditarUsuario - Imagen anterior encontrada para eliminar: " . $imagenAnterior);
+                }
+                // Crear estructura de directorios por tenant (ruta relativa desde el AJAX)
+                $uploadDir = "../views/img/usuarios/tenant_{$_SESSION['tenant_id']}/";
+                $absoluteUploadDir = __DIR__ . "/../views/img/usuarios/tenant_{$_SESSION['tenant_id']}/";
+                error_log("EditarUsuario - Directorio de upload relativo: " . $uploadDir);
+                error_log("EditarUsuario - Directorio de upload absoluto: " . $absoluteUploadDir);
+
+                if (!file_exists($absoluteUploadDir)) {
+                    $created = mkdir($absoluteUploadDir, 0755, true);
+                    error_log("EditarUsuario - Directorio creado: " . ($created ? 'Sí' : 'No'));
+                    if (!$created) {
+                        echo json_encode(array("status" => "error", "message" => "Error al crear directorio de imágenes"));
+                        return;
+                    }
+                }
+
+                $fileExtension = strtolower(pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION));
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+                $maxFileSize = 2 * 1024 * 1024; // 2MB
+                error_log("EditarUsuario - Extensión del archivo: " . $fileExtension);
+                error_log("EditarUsuario - Tamaño del archivo: " . $_FILES['imagen']['size'] . " bytes");
+
+                if (in_array($fileExtension, $allowedExtensions) && $_FILES['imagen']['size'] <= $maxFileSize) {
+                    // Generar nombre único con prefijo de tenant
+                    $filename = "tenant_{$_SESSION['tenant_id']}_usuario_" . time() . '_' . uniqid() . '.' . $fileExtension;
+                    $targetPath = $absoluteUploadDir . $filename;
+                    error_log("EditarUsuario - Ruta objetivo: " . $targetPath);
+
+                    if (move_uploaded_file($_FILES['imagen']['tmp_name'], $targetPath)) {
+                        // Guardar ruta relativa para mostrar desde las vistas (sin "../")
+                        $thumbnail = "views/img/usuarios/tenant_{$_SESSION['tenant_id']}/" . $filename;
+                        error_log("EditarUsuario - Imagen guardada exitosamente: " . $filename);
+                        error_log("EditarUsuario - Ruta thumbnail guardada: " . $thumbnail);
+
+                        // Eliminar imagen anterior si existe y es diferente
+                        if ($imagenAnterior && $imagenAnterior !== $thumbnail) {
+                            self::eliminarImagenUsuario($imagenAnterior, "EditarUsuario");
+                        }
+                    } else {
+                        error_log("EditarUsuario - Error al mover archivo de imagen");
+                        echo json_encode(array("status" => "error", "message" => "Error al guardar la imagen"));
+                        return;
+                    }
+                } else {
+                    $errors = [];
+                    if (!in_array($fileExtension, $allowedExtensions)) {
+                        $errors[] = "Tipo de archivo no permitido. Solo: " . implode(', ', $allowedExtensions);
+                        error_log("EditarUsuario - Extensión no permitida: " . $fileExtension);
+                    }
+                    if ($_FILES['imagen']['size'] > $maxFileSize) {
+                        $errors[] = "Archivo demasiado grande. Máximo 2MB";
+                        error_log("EditarUsuario - Archivo demasiado grande: " . $_FILES['imagen']['size'] . " bytes (máximo: $maxFileSize bytes)");
+                    }
+                    echo json_encode(array("status" => "error", "message" => implode('. ', $errors)));
+                    return;
+                }
+            } else {
+                if (isset($_FILES['imagen'])) {
+                    $errorMessages = [
+                        UPLOAD_ERR_INI_SIZE => 'El archivo excede el tamaño máximo permitido por PHP',
+                        UPLOAD_ERR_FORM_SIZE => 'El archivo excede el tamaño máximo permitido por el formulario',
+                        UPLOAD_ERR_PARTIAL => 'El archivo se subió parcialmente',
+                        UPLOAD_ERR_NO_FILE => 'No se subió ningún archivo',
+                        UPLOAD_ERR_NO_TMP_DIR => 'Falta directorio temporal',
+                        UPLOAD_ERR_CANT_WRITE => 'Error al escribir archivo en disco',
+                        UPLOAD_ERR_EXTENSION => 'Subida detenida por extensión PHP'
+                    ];
+
+                    $errorCode = $_FILES['imagen']['error'];
+                    if ($errorCode !== UPLOAD_ERR_NO_FILE) {
+                        $errorMessage = isset($errorMessages[$errorCode]) ? $errorMessages[$errorCode] : 'Error desconocido';
+                        error_log("EditarUsuario - Error en archivo de imagen: Código $errorCode - $errorMessage");
+                    }
+                } else {
+                    error_log("EditarUsuario - No se recibió archivo de imagen en la petición");
+                }
+            }
+
             $datos = array(
                 "idusuario" => $_POST['idusuario'],
                 "nombre" => $_POST['nombre'],
@@ -328,8 +489,17 @@ class UsuariosController {
                 "telefono" => $_POST['telefono'],
                 "email" => $_POST['email'],
                 "rol" => $_POST['rol'],
-                "estado" => $_POST['estado']
+                "estado" => $_POST['estado'],
+                "thumbnail" => $thumbnail // Solo se actualizará si se subió nueva imagen
             );
+
+            // Agregar contraseña solo si se proporcionó una nueva
+            if (isset($_POST['password']) && !empty(trim($_POST['password']))) {
+                $datos['password'] = $_POST['password']; // Pasar texto plano, el modelo se encarga del hash
+                error_log("EditarUsuario - Nueva contraseña proporcionada, será actualizada");
+            } else {
+                error_log("EditarUsuario - Sin nueva contraseña, manteniendo la actual");
+            }
             
             $respuesta = UsuariosModel::editarUsuario($datos, $_SESSION['tenant_id']);
             
@@ -358,11 +528,40 @@ class UsuariosController {
                 echo json_encode(array("status" => "error", "message" => "No puedes eliminar tu propio usuario"));
                 return;
             }
-            
+
+            // Verificar si el usuario tiene dependencias (facturas asociadas)
+            $dependencias = UsuariosModel::verificarDependenciasUsuario($idusuario, $_SESSION['tenant_id']);
+
+            // Obtener datos del usuario antes de eliminarlo para limpiar su imagen
+            $usuarioAEliminar = UsuariosModel::obtenerUsuario($idusuario, $_SESSION['tenant_id']);
+            $imagenAEliminar = null;
+            if ($usuarioAEliminar && !empty($usuarioAEliminar['thumbnail'])) {
+                $imagenAEliminar = $usuarioAEliminar['thumbnail'];
+                error_log("EliminarUsuario - Imagen a eliminar: " . $imagenAEliminar);
+            }
+
+            // Proceder con la eliminación (soft delete)
             $respuesta = UsuariosModel::eliminarUsuario($idusuario, $_SESSION['tenant_id']);
-            
+
             if ($respuesta) {
-                echo json_encode(array("status" => "success", "message" => "Usuario eliminado exitosamente"));
+                // Eliminar imagen del usuario si existe
+                if ($imagenAEliminar) {
+                    self::eliminarImagenUsuario($imagenAEliminar, "EliminarUsuario");
+                }
+
+                // Mensaje dependiendo de si tiene dependencias o no
+                if ($dependencias['tiene_dependencias']) {
+                    $mensaje = "Usuario desactivado exitosamente. El usuario tenía " . $dependencias['facturas'] . " factura(s) asociada(s), por lo que se cambió su estado a inactivo para fines de auditoría.";
+                } else {
+                    $mensaje = "Usuario eliminado exitosamente.";
+                }
+
+                echo json_encode(array(
+                    "status" => "success",
+                    "message" => $mensaje,
+                    "tipo_eliminacion" => $dependencias['tiene_dependencias'] ? 'desactivacion' : 'eliminacion',
+                    "dependencias" => $dependencias
+                ));
             } else {
                 echo json_encode(array("status" => "error", "message" => "Error al eliminar usuario"));
             }

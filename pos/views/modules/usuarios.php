@@ -31,9 +31,13 @@
 
                             <div>
                                 <div class="inline-flex gap-x-2">
-                                    <a class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-2xs hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-gray-50 dark:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" href="#">
-                                        Ver todos
-                                    </a>
+                                    <button id="btn-ver-todos" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-2xs hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-gray-50 dark:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800">
+                                        <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                        <span id="btn-ver-todos-text">Ver todos</span>
+                                    </button>
 
                                     <button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-hidden focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" data-hs-overlay="#modal-agregar-usuario">
                                         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -73,7 +77,7 @@
                                 <!-- Filtro por estado -->
                                 <div>
                                     <select id="filtro-estado" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-800 dark:border-neutral-600 dark:text-white">
-                                        <option value="1">✅ Solo activos</option>
+                                        <option value="1" selected>✅ Solo activos</option>
                                         <option value="0">❌ Solo inactivos</option>
                                         <option value="">🔄 Todos los estados</option>
                                     </select>
@@ -117,24 +121,24 @@
                         </div>
 
                         <!-- Footer -->
-                        <div class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-t border-gray-200 dark:border-neutral-700">
+                        <div id="usuarios-footer" class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-t border-gray-200 dark:border-neutral-700">
                             <div>
-                                <p class="text-sm text-gray-600 dark:text-neutral-400">
-                                    <span class="font-semibold text-gray-800 dark:text-neutral-200">12</span> results
+                                <p id="pagination-info" class="text-sm text-gray-600 dark:text-neutral-400">
+                                    <span id="pagination-total" class="font-semibold text-gray-800 dark:text-neutral-200">0</span> usuarios encontrados
                                 </p>
                             </div>
 
                             <div>
                                 <div class="inline-flex gap-x-2">
-                                    <button type="button" class="py-1.5 px-2 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-2xs hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-gray-50 dark:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800">
+                                    <button type="button" id="btn-previous" class="btn-previous py-1.5 px-2 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-2xs hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-gray-50 dark:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" disabled>
                                         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="m15 18-6-6 6-6" />
                                         </svg>
-                                        Prev
+                                        Anterior
                                     </button>
 
-                                    <button type="button" class="py-1.5 px-2 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-2xs hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-gray-50 dark:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800">
-                                        Next
+                                    <button type="button" id="btn-next" class="btn-next py-1.5 px-2 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-2xs hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-gray-50 dark:bg-transparent dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800" disabled>
+                                        Siguiente
                                         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="m9 18 6-6-6-6" />
                                         </svg>
@@ -390,39 +394,182 @@
 
             <!-- Body -->
             <div class="p-8 overflow-y-auto max-h-[70vh]">
-                <div class="text-center py-16">
+                <!-- Loading state -->
+                <div id="editar-loading" class="text-center py-16">
                     <div class="w-20 h-20 mx-auto bg-gradient-to-br from-amber-100 to-orange-100 rounded-full flex items-center justify-center mb-6 shadow-lg dark:from-amber-900/20 dark:to-orange-900/20">
-                        <svg class="w-10 h-10 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
                     </div>
-                    <h3 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Editar Usuario</h3>
-                    <p class="text-gray-600 dark:text-neutral-400 max-w-sm mx-auto leading-relaxed mb-6">
-                        Aquí se mostrará el formulario para editar la información de este usuario con todos sus datos actuales.
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Cargando datos del usuario...</h3>
+                    <p class="text-gray-600 dark:text-neutral-400">
+                        Obteniendo información actual del usuario para edición.
                     </p>
-                    
-                    <!-- Info del usuario -->
-                    <div class="inline-flex items-center gap-3 px-4 py-3 bg-amber-50 rounded-lg border border-amber-100 dark:bg-amber-900/10 dark:border-amber-800/20">
-                        <div class="flex items-center justify-center w-8 h-8 bg-amber-100 rounded-full dark:bg-amber-900/20">
-                            <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="currentColor" viewBox="0 0 24 24">
-                                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <div class="text-left">
-                            <p class="text-sm font-medium text-amber-800 dark:text-amber-300">Usuario seleccionado</p>
-                            <p class="text-xs text-amber-600 dark:text-amber-400">ID: <span id="usuario-id-display" class="font-mono font-semibold">-</span></p>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-8 p-4 bg-amber-50 rounded-lg border border-amber-100 dark:bg-amber-900/10 dark:border-amber-800/20">
-                        <div class="flex items-center justify-center gap-2 text-amber-700 dark:text-amber-400">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span class="text-sm font-medium">Formulario en desarrollo</span>
-                        </div>
-                    </div>
                 </div>
+
+                <!-- Formulario de edición (oculto inicialmente) -->
+                <form id="formEditarUsuario" class="space-y-6 hidden">
+                    <input type="hidden" id="editar-usuario-id" name="idusuario">
+
+                    <!-- Sección: Foto de perfil -->
+                    <div class="text-center">
+                        <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-4">Foto de perfil</h4>
+                        <div id="editar-dropzone-container" class="mx-auto w-32 h-32 relative group cursor-pointer">
+                            <!-- Dropzone para imagen -->
+                            <div id="editar-image-dropzone" class="w-full h-full border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center bg-gray-50 hover:bg-gray-100 hover:border-amber-400 transition-all duration-200 dark:bg-neutral-800 dark:border-neutral-600 dark:hover:bg-neutral-700">
+                                <div id="editar-dropzone-content" class="text-center">
+                                    <svg class="mx-auto h-8 w-8 text-gray-400 dark:text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    <p class="mt-1 text-xs text-gray-500 dark:text-neutral-400">Cambiar foto</p>
+                                </div>
+                                <img id="editar-image-preview" class="hidden w-full h-full object-cover rounded-full" />
+                            </div>
+                            <!-- Input oculto para archivos -->
+                            <input type="file" id="editar-usuario-imagen" name="usuario_imagen" accept="image/*" class="hidden">
+                            <!-- Botón para quitar imagen -->
+                            <button type="button" id="editar-remove-image" class="hidden absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="mt-2 text-xs text-gray-500 dark:text-neutral-400">JPG, PNG hasta 2MB</p>
+                    </div>
+
+                    <!-- Sección: Información personal -->
+                    <div class="bg-gray-50 dark:bg-neutral-800/50 rounded-xl p-6">
+                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            Información Personal
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="editar-nombre-usuario" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                    Nombre completo <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="editar-nombre-usuario" name="nombre" required
+                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-neutral-800 dark:border-neutral-600 dark:placeholder-neutral-400 dark:text-white"
+                                       placeholder="Ej: Juan Pérez Gómez">
+                            </div>
+                            <div>
+                                <label for="editar-cargo-usuario" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                    Cargo <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="editar-cargo-usuario" name="cargo" required maxlength="45"
+                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-neutral-800 dark:border-neutral-600 dark:placeholder-neutral-400 dark:text-white"
+                                       placeholder="Ej: Gerente de ventas">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección: Información de contacto -->
+                    <div class="bg-gray-50 dark:bg-neutral-800/50 rounded-xl p-6">
+                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                            </svg>
+                            Información de Contacto
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="editar-email-usuario" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                    Email <span class="text-red-500">*</span>
+                                </label>
+                                <input type="email" id="editar-email-usuario" name="email" required maxlength="150"
+                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-neutral-800 dark:border-neutral-600 dark:placeholder-neutral-400 dark:text-white"
+                                       placeholder="Ej: juan.perez@empresa.com">
+                            </div>
+                            <div>
+                                <label for="editar-telefono-usuario" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                    Teléfono <span class="text-red-500">*</span>
+                                </label>
+                                <input type="tel" id="editar-telefono-usuario" name="telefono" required maxlength="13"
+                                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-neutral-800 dark:border-neutral-600 dark:placeholder-neutral-400 dark:text-white"
+                                       placeholder="Ej: 0999999999">
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <label for="editar-direccion-usuario" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                Dirección
+                            </label>
+                            <input type="text" id="editar-direccion-usuario" name="direccion" maxlength="150"
+                                   class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-neutral-800 dark:border-neutral-600 dark:placeholder-neutral-400 dark:text-white"
+                                   placeholder="Ej: Av. Amazonas y Naciones Unidas">
+                        </div>
+                    </div>
+
+                    <!-- Sección: Acceso al sistema -->
+                    <div class="bg-gray-50 dark:bg-neutral-800/50 rounded-xl p-6">
+                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            Acceso al Sistema
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="editar-rol-usuario" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                    Rol <span class="text-red-500">*</span>
+                                </label>
+                                <select id="editar-rol-usuario" name="rol" required
+                                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-neutral-800 dark:border-neutral-600 dark:text-white">
+                                    <option value="">Seleccionar rol</option>
+                                    <option value="Administrador">👑 Administrador</option>
+                                    <option value="Vendedor">💼 Vendedor</option>
+                                    <option value="Visualizador">👁️ Visualizador</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="editar-sucursal-usuario" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                    Sucursal <span class="text-red-500">*</span>
+                                </label>
+                                <select id="editar-sucursal-usuario" name="sucursal_idsucursal" required
+                                        class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-neutral-800 dark:border-neutral-600 dark:text-white">
+                                    <option value="">Cargando sucursales...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Estado del usuario -->
+                        <div class="mt-4">
+                            <label for="editar-estado-usuario" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                Estado <span class="text-red-500">*</span>
+                            </label>
+                            <select id="editar-estado-usuario" name="estado" required
+                                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-neutral-800 dark:border-neutral-600 dark:text-white">
+                                <option value="1">✅ Activo</option>
+                                <option value="0">❌ Inactivo</option>
+                            </select>
+                        </div>
+
+                        <!-- Nueva contraseña (opcional) -->
+                        <div class="mt-4">
+                            <label for="editar-password-usuario" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                Nueva contraseña <span class="text-xs text-gray-500">(opcional)</span>
+                            </label>
+                            <div class="relative">
+                                <input type="password" id="editar-password-usuario" name="password"
+                                       class="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-amber-500 focus:border-amber-500 dark:bg-neutral-800 dark:border-neutral-600 dark:placeholder-neutral-400 dark:text-white"
+                                       placeholder="Dejar vacío para mantener la actual">
+                                <button type="button" id="editar-toggle-password" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600">
+                                    <!-- Icono ojo cerrado (contraseña oculta) -->
+                                    <svg id="editar-eye-closed" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 11-4.243-4.243m4.242 4.242L9.88 9.88"></path>
+                                    </svg>
+                                    <!-- Icono ojo abierto (contraseña visible) -->
+                                    <svg id="editar-eye-open" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-neutral-400">
+                                Solo se actualizará si ingresas una nueva contraseña
+                            </p>
+                        </div>
+                    </div>
+                </form>
             </div>
             <!-- End Body -->
 

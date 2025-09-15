@@ -261,15 +261,24 @@ $(document).ready(function() {
     const UsuariosManager = {
         data: [],
         filteredData: [],
+        incluyeEliminados: false, // Nueva propiedad para controlar si mostrar eliminados
+        pagination: {
+            currentPage: 1,
+            limit: 6,
+            total: 0,
+            totalPages: 0,
+            hasPrevious: false,
+            hasNext: false
+        },
         filters: {
             buscar: '',
             rol: '',
-            estado: '1' // Inicializar con estado activo
+            estado: '1' // Inicializar mostrando solo usuarios activos
         },
 
         init: function() {
-            // Solo inicializar si existe el contenedor
-            if ($('#usuarios-grid').length) {
+            // Solo inicializar si existe el contenedor Y el usuario está logueado
+            if ($('#usuarios-grid').length && window.TENANT_ID) {
                 this.bindEvents();
                 this.cargarUsuarios();
             }
@@ -291,7 +300,8 @@ $(document).ready(function() {
 
             $('#filtro-estado').on('change', function() {
                 self.filters.estado = $(this).val();
-                self.filtrarYMostrar();
+                // Para el filtro de estado, recargar desde el backend
+                self.cargarUsuarios(1); // Volver a página 1 al cambiar filtro
             });
 
             // Botón limpiar filtros
@@ -300,26 +310,53 @@ $(document).ready(function() {
             });
         },
 
-        cargarUsuarios: function() {
+        cargarUsuarios: function(page = null) {
             const self = this;
-            
+
+            // Si se especifica página, actualizar el estado
+            if (page !== null) {
+                this.pagination.currentPage = page;
+            }
+
             $.ajax({
                 url: 'ajax/usuarios.ajax.php',
                 type: 'POST',
-                data: { accion: 'obtener_usuarios' },
+                data: {
+                    accion: 'obtener_usuarios',
+                    page: this.pagination.currentPage,
+                    limit: this.pagination.limit,
+                    estado: this.filters.estado, // Mantener el filtro de estado
+                    incluir_eliminados: this.incluyeEliminados
+                },
                 dataType: 'json',
                 beforeSend: function() {
                     self.mostrarLoading();
                 },
                 success: function(respuesta) {
-                    if (respuesta.status === 'success') {
-                        self.data = respuesta.data || [];
+                    console.log('UsuariosManager: Respuesta completa del servidor:', respuesta);
+
+                    if (respuesta.status === 'success' && respuesta.data) {
+                        // Actualizar datos de paginación
+                        self.data = respuesta.data.usuarios || [];
+                        self.pagination.total = respuesta.data.total || 0;
+                        self.pagination.totalPages = respuesta.data.total_pages || 0;
+                        self.pagination.hasPrevious = respuesta.data.has_previous || false;
+                        self.pagination.hasNext = respuesta.data.has_next || false;
+
+                        console.log('UsuariosManager: Datos procesados:');
+                        console.log('- self.data:', self.data);
+                        console.log('- self.data.length:', self.data.length);
+                        console.log('- self.pagination:', self.pagination);
+
+                        // Como ya tenemos los usuarios paginados del servidor, aplicar filtros
                         self.filtrarYMostrar();
                     } else {
-                        self.mostrarError('Error al cargar usuarios: ' + respuesta.message);
+                        console.error('UsuariosManager: Error en respuesta:', respuesta);
+                        self.mostrarError('Error al cargar usuarios: ' + (respuesta.message || 'Error desconocido'));
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
+                    console.error('UsuariosManager: Error AJAX:', { xhr: xhr, status: status, error: error });
                     self.mostrarError('Error de conexión con el servidor');
                 }
             });
@@ -327,29 +364,38 @@ $(document).ready(function() {
 
         filtrarYMostrar: function() {
             const self = this;
-            
+
+            console.log('filtrarYMostrar: Iniciando filtrado');
+            console.log('- this.data:', this.data);
+            console.log('- this.data.length:', this.data.length);
+            console.log('- this.filters:', this.filters);
+
             this.filteredData = this.data.filter(usuario => {
                 // Filtro de búsqueda
-                const matchesBuscar = !this.filters.buscar || 
+                const matchesBuscar = !this.filters.buscar ||
                     (usuario.nombre && usuario.nombre.toLowerCase().includes(this.filters.buscar)) ||
                     (usuario.email && usuario.email.toLowerCase().includes(this.filters.buscar)) ||
                     (usuario.cargo && usuario.cargo.toLowerCase().includes(this.filters.buscar));
-                
+
                 // Filtro de rol
-                const matchesRol = !this.filters.rol || 
+                const matchesRol = !this.filters.rol ||
                     (usuario.rol && usuario.rol === this.filters.rol);
-                
-                // Filtro de estado
-                const matchesEstado = this.filters.estado === '' || 
-                    (usuario.estado && usuario.estado.toString() === this.filters.estado);
-                
-                return matchesBuscar && matchesRol && matchesEstado;
+
+                // El filtro de estado ahora se maneja en el backend
+                return matchesBuscar && matchesRol;
             });
+
+            console.log('filtrarYMostrar: Resultado filtrado');
+            console.log('- this.filteredData:', this.filteredData);
+            console.log('- this.filteredData.length:', this.filteredData.length);
 
             this.mostrarUsuarios();
         },
 
         mostrarUsuarios: function() {
+            console.log('mostrarUsuarios: Iniciando renderizado');
+            console.log('- this.filteredData.length:', this.filteredData.length);
+
             const container = $('#usuarios-grid');
             container.empty();
 
@@ -357,25 +403,48 @@ $(document).ready(function() {
             this.ocultarEstados();
 
             if (this.filteredData.length === 0) {
+                console.log('mostrarUsuarios: No hay datos filtrados, mostrando estado vacío');
                 this.mostrarEmpty();
                 return;
             }
+
+            console.log('mostrarUsuarios: Renderizando', this.filteredData.length, 'usuarios');
 
             // Mostrar grid
             container.removeClass('hidden').addClass('grid');
 
             // Crear cards para cada usuario
-            this.filteredData.forEach(usuario => {
-                console.log('UsuariosManager: Datos de usuario:', usuario);
+            this.filteredData.forEach((usuario, index) => {
+                console.log('UsuariosManager: Creando card', index + 1, 'para usuario:', usuario.nombre);
                 const card = this.crearCard(usuario);
                 container.append(card);
             });
+
+            // Verificar estado final del contenedor
+            console.log('mostrarUsuarios: Cards agregadas al DOM');
+            console.log('- container.children().length:', container.children().length);
+            console.log('- container.is(":visible"):', container.is(':visible'));
+            console.log('- container.hasClass("hidden"):', container.hasClass('hidden'));
+            console.log('- container.hasClass("grid"):', container.hasClass('grid'));
+
+            this.actualizarFooterPaginacion();
         },
 
         crearCard: function(usuario) {
-            const statusClass = usuario.estado == 1 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-            const statusText = usuario.estado == 1 ? 'Activo' : 'Inactivo';
-            const statusIcon = usuario.estado == 1 ? '✅' : '❌';
+            // Verificar si el usuario está eliminado
+            const isDeleted = usuario.deleted_at !== null && usuario.deleted_at !== undefined;
+
+            let statusClass, statusText, statusIcon;
+
+            if (isDeleted) {
+                statusClass = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+                statusText = 'Eliminado';
+                statusIcon = '🗑️';
+            } else {
+                statusClass = usuario.estado == 1 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+                statusText = usuario.estado == 1 ? 'Activo' : 'Inactivo';
+                statusIcon = usuario.estado == 1 ? '✅' : '❌';
+            }
 
             const roleIcons = {
                 'Administrador': '👑',
@@ -485,18 +554,27 @@ $(document).ready(function() {
                     <!-- Footer -->
                     <div class="px-6 py-4 border-t border-gray-100 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800/50">
                         <div class="flex gap-2 justify-end">
-                            <button class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:text-blue-400 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 transition-colors duration-200 btnEditarUsuario" data-id="${usuario.idusuario}">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                </svg>
-                                Editar
-                            </button>
-                            <button class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/30 transition-colors duration-200 btnEliminarUsuario" data-id="${usuario.idusuario}">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                </svg>
-                                Eliminar
-                            </button>
+                            ${isDeleted ? `
+                                <div class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-500 bg-gray-100 cursor-not-allowed dark:text-gray-400 dark:bg-gray-800">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
+                                    </svg>
+                                    Usuario eliminado
+                                </div>
+                            ` : `
+                                <button class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:text-blue-400 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 transition-colors duration-200 btnEditarUsuario" data-id="${usuario.idusuario}">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    Editar
+                                </button>
+                                <button class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/30 transition-colors duration-200 btnEliminarUsuario" data-id="${usuario.idusuario}">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    Eliminar
+                                </button>
+                            `}
                         </div>
                     </div>
                 </div>
@@ -540,20 +618,103 @@ $(document).ready(function() {
             // Resetear valores de filtros
             this.filters.buscar = '';
             this.filters.rol = '';
-            this.filters.estado = '1'; // Mantener activos por defecto
-            
+            this.filters.estado = '1'; // Mostrar solo activos por defecto
+
             // Resetear elementos del DOM
             $('#buscar-usuario').val('');
             $('#filtro-rol').val('');
             $('#filtro-estado').val('1');
-            
-            // Aplicar filtros
-            this.filtrarYMostrar();
+
+            // Recargar desde el backend para aplicar filtro de estado
+            this.cargarUsuarios(1);
         },
 
         recargar: function() {
             console.log('UsuariosManager: Recargando usuarios...');
+            // Restablecer filtros a su estado inicial
+            this.filters.buscar = '';
+            this.filters.rol = '';
+            this.filters.estado = '1'; // Mostrar solo usuarios activos por defecto
+
+            // Actualizar elementos de la interfaz
+            $('#filtro-buscar').val('');
+            $('#filtro-rol').val('');
+            $('#filtro-estado').val('1');
+
+            // Cargar usuarios con filtros restablecidos
             this.cargarUsuarios();
+        },
+
+        // Funciones de paginación
+        irAPagina: function(page) {
+            if (page >= 1 && page <= this.pagination.totalPages) {
+                console.log('UsuariosManager: Navegando a página', page);
+                this.cargarUsuarios(page);
+            }
+        },
+
+        paginaAnterior: function() {
+            if (this.pagination.hasPrevious) {
+                this.irAPagina(this.pagination.currentPage - 1);
+            }
+        },
+
+        paginaSiguiente: function() {
+            if (this.pagination.hasNext) {
+                this.irAPagina(this.pagination.currentPage + 1);
+            }
+        },
+
+        actualizarFooterPaginacion: function() {
+            const footer = document.querySelector('#usuarios-footer');
+            if (!footer) return;
+
+            // Calcular rango de usuarios mostrados
+            const inicio = (this.pagination.currentPage - 1) * this.pagination.limit + 1;
+            const fin = Math.min(this.pagination.currentPage * this.pagination.limit, this.pagination.total);
+
+            // Actualizar contador de resultados
+            const resultadosText = footer.querySelector('.text-sm.text-gray-600');
+            if (resultadosText) {
+                if (this.pagination.total === 0) {
+                    resultadosText.innerHTML = '<span class="font-semibold text-gray-800 dark:text-neutral-200">0</span> resultados';
+                } else {
+                    resultadosText.innerHTML = `
+                        Mostrando <span class="font-semibold text-gray-800 dark:text-neutral-200">${inicio}-${fin}</span>
+                        de <span class="font-semibold text-gray-800 dark:text-neutral-200">${this.pagination.total}</span> resultados
+                    `;
+                }
+            }
+
+            // Actualizar botones de navegación
+            const btnPrevious = footer.querySelector('.btn-previous');
+            const btnNext = footer.querySelector('.btn-next');
+
+            if (btnPrevious) {
+                if (this.pagination.hasPrevious) {
+                    btnPrevious.classList.remove('disabled:opacity-50', 'disabled:pointer-events-none');
+                    btnPrevious.removeAttribute('disabled');
+                } else {
+                    btnPrevious.classList.add('disabled:opacity-50', 'disabled:pointer-events-none');
+                    btnPrevious.setAttribute('disabled', 'true');
+                }
+            }
+
+            if (btnNext) {
+                if (this.pagination.hasNext) {
+                    btnNext.classList.remove('disabled:opacity-50', 'disabled:pointer-events-none');
+                    btnNext.removeAttribute('disabled');
+                } else {
+                    btnNext.classList.add('disabled:opacity-50', 'disabled:pointer-events-none');
+                    btnNext.setAttribute('disabled', 'true');
+                }
+            }
+
+            console.log('UsuariosManager: Footer actualizado', {
+                showing: `${inicio}-${fin} de ${this.pagination.total}`,
+                hasPrevious: this.pagination.hasPrevious,
+                hasNext: this.pagination.hasNext
+            });
         },
 
         resaltarNuevoUsuario: function(email) {
@@ -1114,27 +1275,44 @@ $(document).ready(function() {
             return isValid;
         },
 
-        submitForm: function() {
+        submitForm: async function() {
             const self = this;
             console.log('FormAgregarUsuario: Iniciando envío del formulario');
-            
+
             // Validar formulario
             if (!this.validateForm()) {
                 this.showError('Por favor corrige los errores en el formulario');
                 return;
             }
 
+            const email = $('#email-usuario').val().trim();
+            const password = $('#password-usuario').val();
+
             // Preparar datos del formulario
             const formData = new FormData();
-            
+
             // Campos del formulario
             formData.append('accion', 'crear_usuario');
             formData.append('nombre', $('#nombre-usuario').val().trim());
             formData.append('cargo', $('#cargo-usuario').val().trim());
             formData.append('direccion', $('#direccion-usuario').val().trim() || 'Quito');
             formData.append('telefono', $('#telefono-usuario').val().trim());
-            formData.append('email', $('#email-usuario').val().trim());
-            formData.append('password', $('#password-usuario').val());
+            formData.append('email', email);
+
+            // Hashear contraseña del lado cliente como en el login
+            try {
+                console.log('FormAgregarUsuario: Hasheando contraseña...');
+                const salt = await getSalt(email);
+                const hashedPassword = await hashPassword(password, salt);
+                formData.append('password', hashedPassword);
+                formData.append('is_hashed', 'true');
+                console.log('FormAgregarUsuario: Contraseña hasheada exitosamente');
+            } catch (error) {
+                console.log('FormAgregarUsuario: Error hasheando, usando texto plano como fallback');
+                formData.append('password', password);
+                formData.append('is_hashed', 'false');
+            }
+
             formData.append('rol', $('#rol-usuario').val());
             formData.append('sucursal_id', $('#sucursal-usuario').val());
 
@@ -1323,21 +1501,754 @@ $(document).ready(function() {
     $(document).on('click', '.btnEditarUsuario', function() {
         const userId = $(this).data('id');
         console.log('Abriendo modal editar para usuario ID:', userId);
-        
-        // Actualizar el ID en el modal
-        $('#usuario-id-display').text(userId);
-        
+
+        // Cargar datos del usuario específico
+        FormEditarUsuario.cargarUsuario(userId);
+
         // Abrir modal usando Preline UI
         const modal = document.getElementById('modal-editar-usuario');
         if (modal && window.HSOverlay) {
             window.HSOverlay.open(modal);
         }
     });
-    
-    // Exponer funci�n logout globalmente
+
+    // Botón Eliminar Usuario en las cards
+    $(document).on('click', '.btnEliminarUsuario', function() {
+        const userId = $(this).data('id');
+        console.log('Solicitando eliminación para usuario ID:', userId);
+
+        // Confirmar eliminación con SweetAlert
+        Swal.fire({
+            title: '¿Eliminar usuario?',
+            text: 'Esta acción verificará si el usuario puede ser eliminado o necesita ser desactivado para fines de auditoría.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, proceder',
+            cancelButtonText: 'Cancelar',
+            backdrop: true,
+            allowOutsideClick: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                eliminarUsuario(userId);
+            }
+        });
+    });
+
+    // Sistema de manejo de formulario editar usuario
+    const FormEditarUsuario = {
+        datosOriginales: null,
+
+        init: function() {
+            console.log('FormEditarUsuario: Inicializando...');
+            this.setupDropzone();
+            this.setupPasswordToggle();
+            this.loadSucursales();
+            this.bindEvents();
+            console.log('FormEditarUsuario: Inicialización completa');
+        },
+
+        cargarUsuario: function(userId) {
+            console.log('FormEditarUsuario: Cargando usuario ID:', userId);
+
+            // Mostrar loading y ocultar formulario
+            $('#editar-loading').removeClass('hidden');
+            $('#formEditarUsuario').addClass('hidden');
+
+            $.ajax({
+                url: 'ajax/usuarios.ajax.php',
+                type: 'POST',
+                data: {
+                    accion: 'obtener_usuario',
+                    idusuario: userId
+                },
+                dataType: 'json',
+                success: function(response) {
+                    console.log('FormEditarUsuario: Respuesta del servidor:', response);
+                    if (response.status === 'success' && response.data) {
+                        FormEditarUsuario.poblarFormulario(response.data);
+                    } else {
+                        FormEditarUsuario.mostrarError('No se pudieron cargar los datos del usuario: ' + (response.message || 'Error desconocido'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('FormEditarUsuario: Error AJAX:', {xhr, status, error});
+                    FormEditarUsuario.mostrarError('Error de conexión con el servidor');
+                }
+            });
+        },
+
+        poblarFormulario: function(usuario) {
+            console.log('FormEditarUsuario: Poblando formulario con datos:', usuario);
+
+            // Guardar datos originales para comparar cambios
+            this.datosOriginales = { ...usuario };
+
+            // Verificar si el usuario está editando su propio perfil
+            const esPropioPerfil = usuario.idusuario == window.currentUserId;
+            console.log('FormEditarUsuario: Es propio perfil:', esPropioPerfil, 'Usuario ID:', usuario.idusuario, 'Current User ID:', window.currentUserId);
+
+            // Rellenar campos del formulario
+            $('#editar-usuario-id').val(usuario.idusuario);
+            $('#editar-nombre-usuario').val(usuario.nombre || '');
+            $('#editar-cargo-usuario').val(usuario.cargo || '');
+            $('#editar-email-usuario').val(usuario.email || '');
+            $('#editar-telefono-usuario').val(usuario.telefono || '');
+            $('#editar-direccion-usuario').val(usuario.direccion || '');
+            $('#editar-rol-usuario').val(usuario.rol || '');
+            $('#editar-estado-usuario').val(usuario.estado !== null && usuario.estado !== undefined ? usuario.estado : '1');
+
+            // Si está editando su propio perfil, deshabilitar la opción "Inactivo"
+            if (esPropioPerfil) {
+                console.log('FormEditarUsuario: Deshabilitando opción Inactivo para propio perfil');
+                const estadoSelect = $('#editar-estado-usuario');
+                const opcionInactivo = estadoSelect.find('option[value="0"]');
+
+                if (opcionInactivo.length) {
+                    opcionInactivo.prop('disabled', true);
+                    opcionInactivo.text('❌ Inactivo (No disponible para tu usuario)');
+                }
+
+                // Asegurar que está seleccionado "Activo"
+                estadoSelect.val('1');
+
+                // Agregar mensaje informativo
+                const estadoContainer = estadoSelect.closest('div');
+                if (!estadoContainer.find('.self-disable-warning').length) {
+                    estadoContainer.append(`
+                        <p class="mt-1 text-xs text-amber-600 dark:text-amber-400 self-disable-warning">
+                            <svg class="inline w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                            No puedes desactivar tu propio usuario
+                        </p>
+                    `);
+                }
+            } else {
+                // Si no es su propio perfil, habilitar todas las opciones
+                const estadoSelect = $('#editar-estado-usuario');
+                const opcionInactivo = estadoSelect.find('option[value="0"]');
+
+                if (opcionInactivo.length) {
+                    opcionInactivo.prop('disabled', false);
+                    opcionInactivo.text('❌ Inactivo');
+                }
+
+                // Remover mensaje de advertencia si existe
+                $('.self-disable-warning').remove();
+            }
+
+            // Cargar imagen si existe
+            if (usuario.thumbnail && usuario.thumbnail.trim() !== '' && usuario.thumbnail !== 'null') {
+                $('#editar-image-preview').attr('src', usuario.thumbnail).removeClass('hidden');
+                $('#editar-dropzone-content').addClass('hidden');
+                $('#editar-remove-image').removeClass('hidden');
+            } else {
+                this.removeImage();
+            }
+
+            // Cargar sucursales y seleccionar la del usuario
+            console.log('FormEditarUsuario: ID de sucursal del usuario:', usuario.idsucursal);
+            this.loadSucursales(usuario.idsucursal);
+
+            // Ocultar loading y mostrar formulario
+            $('#editar-loading').addClass('hidden');
+            $('#formEditarUsuario').removeClass('hidden');
+        },
+
+        setupDropzone: function() {
+            console.log('FormEditarUsuario: Configurando dropzone...');
+            const dropzone = $('#editar-image-dropzone');
+            const fileInput = $('#editar-usuario-imagen');
+            const preview = $('#editar-image-preview');
+            const content = $('#editar-dropzone-content');
+            const removeBtn = $('#editar-remove-image');
+
+            // Click en dropzone abre selector de archivos
+            dropzone.on('click', function() {
+                console.log('FormEditarUsuario: Click en dropzone');
+                fileInput.click();
+            });
+
+            // Drag & Drop
+            dropzone.on('dragover', function(e) {
+                e.preventDefault();
+                $(this).addClass('border-amber-400 bg-amber-50');
+            });
+
+            dropzone.on('dragleave', function(e) {
+                e.preventDefault();
+                $(this).removeClass('border-amber-400 bg-amber-50');
+            });
+
+            dropzone.on('drop', function(e) {
+                e.preventDefault();
+                $(this).removeClass('border-amber-400 bg-amber-50');
+
+                const files = e.originalEvent.dataTransfer.files;
+                if (files.length > 0) {
+                    FormEditarUsuario.handleFile(files[0]);
+                }
+            });
+
+            // Cambio en input file
+            fileInput.on('change', function() {
+                if (this.files.length > 0) {
+                    FormEditarUsuario.handleFile(this.files[0]);
+                }
+            });
+
+            // Remover imagen
+            removeBtn.on('click', function(e) {
+                e.stopPropagation();
+                FormEditarUsuario.removeImage();
+            });
+        },
+
+        handleFile: function(file) {
+            // Validar tipo de archivo
+            if (!file.type.match('image.*')) {
+                this.showError('Por favor selecciona un archivo de imagen válido');
+                return;
+            }
+
+            // Validar tamaño (2MB máximo)
+            if (file.size > 2 * 1024 * 1024) {
+                this.showError('La imagen debe ser menor a 2MB');
+                return;
+            }
+
+            // Mostrar preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#editar-image-preview').attr('src', e.target.result).removeClass('hidden');
+                $('#editar-dropzone-content').addClass('hidden');
+                $('#editar-remove-image').removeClass('hidden');
+            };
+            reader.readAsDataURL(file);
+
+            // Actualizar input file con el archivo seleccionado
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            document.getElementById('editar-usuario-imagen').files = dataTransfer.files;
+        },
+
+        removeImage: function() {
+            $('#editar-image-preview').addClass('hidden').attr('src', '');
+            $('#editar-dropzone-content').removeClass('hidden');
+            $('#editar-remove-image').addClass('hidden');
+            $('#editar-usuario-imagen').val('');
+        },
+
+        setupPasswordToggle: function() {
+            $('#editar-toggle-password').on('click', function() {
+                const passwordInput = $('#editar-password-usuario');
+                const eyeClosed = $('#editar-eye-closed');
+                const eyeOpen = $('#editar-eye-open');
+
+                if (passwordInput.attr('type') === 'password') {
+                    passwordInput.attr('type', 'text');
+                    eyeClosed.addClass('hidden');
+                    eyeOpen.removeClass('hidden');
+                } else {
+                    passwordInput.attr('type', 'password');
+                    eyeClosed.removeClass('hidden');
+                    eyeOpen.addClass('hidden');
+                }
+            });
+        },
+
+        loadSucursales: function(sucursalSeleccionada = null) {
+            console.log('FormEditarUsuario: Cargando sucursales...', 'Sucursal a seleccionar:', sucursalSeleccionada);
+            $.ajax({
+                url: 'ajax/usuarios.ajax.php',
+                type: 'POST',
+                data: { accion: 'obtener_sucursales' },
+                dataType: 'json',
+                beforeSend: function() {
+                    $('#editar-sucursal-usuario').html('<option value="">Cargando sucursales...</option>');
+                },
+                success: function(response) {
+                    console.log('FormEditarUsuario: Respuesta sucursales:', response);
+                    const select = $('#editar-sucursal-usuario');
+                    select.empty();
+
+                    if (response.status === 'success' && response.data) {
+                        select.append('<option value="">Seleccionar sucursal</option>');
+                        response.data.forEach(function(sucursal) {
+                            const selected = sucursalSeleccionada && sucursal.idsucursal == sucursalSeleccionada ? 'selected' : '';
+                            if (selected) {
+                                console.log('FormEditarUsuario: Seleccionando sucursal:', sucursal.sri_nombre, 'ID:', sucursal.idsucursal);
+                            }
+                            select.append(`<option value="${sucursal.idsucursal}" ${selected}>${sucursal.sri_nombre}</option>`);
+                        });
+                    } else {
+                        select.append('<option value="">No hay sucursales disponibles</option>');
+                        console.log('FormEditarUsuario: No se encontraron sucursales o error en response');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('FormEditarUsuario: Error al cargar sucursales:', error);
+                    $('#editar-sucursal-usuario').html('<option value="">Error al cargar sucursales</option>');
+                }
+            });
+        },
+
+        bindEvents: function() {
+            console.log('FormEditarUsuario: Configurando eventos...');
+
+            // Solo números en teléfono
+            $('#editar-telefono-usuario').on('input', function() {
+                this.value = this.value.replace(/\D/g, '');
+            });
+
+            console.log('FormEditarUsuario: Eventos configurados exitosamente');
+        },
+
+        validateForm: function() {
+            let isValid = true;
+            const requiredFields = [
+                '#editar-nombre-usuario',
+                '#editar-cargo-usuario',
+                '#editar-email-usuario',
+                '#editar-telefono-usuario',
+                '#editar-rol-usuario',
+                '#editar-sucursal-usuario',
+                '#editar-estado-usuario'
+            ];
+
+            // Limpiar errores previos
+            $('.text-red-600').remove();
+            $('.border-red-300').removeClass('border-red-300 focus:border-red-500 focus:ring-red-500')
+                               .addClass('border-gray-300 focus:border-amber-500 focus:ring-amber-500');
+
+            // Validar campos requeridos
+            requiredFields.forEach(selector => {
+                const field = $(selector);
+                const value = field.val().trim();
+
+                if (!value) {
+                    this.showFieldError(field, 'Este campo es requerido');
+                    isValid = false;
+                }
+            });
+
+            // Validar email
+            const email = $('#editar-email-usuario').val().trim();
+            const emailField = $('#editar-email-usuario');
+            if (email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    this.showFieldError(emailField, 'Email no válido');
+                    isValid = false;
+                }
+            }
+
+            // Validar teléfono
+            const telefono = $('#editar-telefono-usuario').val().trim();
+            if (telefono && (telefono.length < 10 || telefono.length > 13)) {
+                this.showFieldError($('#editar-telefono-usuario'), 'Teléfono debe tener entre 10 y 13 dígitos');
+                isValid = false;
+            }
+
+            return isValid;
+        },
+
+        showFieldError: function(field, message) {
+            field.addClass('border-red-300 focus:border-red-500 focus:ring-red-500');
+            field.removeClass('border-gray-300 focus:border-amber-500 focus:ring-amber-500');
+
+            // Agregar mensaje de error si no existe
+            const errorId = field.attr('id') + '-error';
+            if (!$('#' + errorId).length) {
+                field.after(`<p id="${errorId}" class="mt-1 text-xs text-red-600">${message}</p>`);
+            }
+        },
+
+        showError: function(message) {
+            // Crear toast de error
+            const toastHtml = `
+                <div class="max-w-xs bg-white border border-gray-200 rounded-xl shadow-lg dark:bg-neutral-800 dark:border-neutral-700" role="alert">
+                    <div class="flex p-4">
+                        <div class="shrink-0">
+                            <svg class="shrink-0 size-4 text-red-500 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 1 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                            </svg>
+                        </div>
+                        <div class="ms-3">
+                            <p class="text-sm text-gray-700 dark:text-neutral-400">${message}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            showToast(toastHtml);
+        },
+
+        mostrarError: function(mensaje) {
+            // Ocultar loading y mostrar mensaje de error
+            $('#editar-loading').addClass('hidden');
+            $('#formEditarUsuario').addClass('hidden');
+
+            const errorHtml = `
+                <div class="text-center py-16">
+                    <div class="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-6 shadow-lg dark:bg-red-900/20">
+                        <svg class="w-10 h-10 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Error al cargar usuario</h3>
+                    <p class="text-gray-600 dark:text-neutral-400 mb-6">${mensaje}</p>
+                    <button onclick="location.reload()" class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700">
+                        Reintentar
+                    </button>
+                </div>
+            `;
+
+            // Reemplazar contenido del modal
+            $('#modal-editar-usuario .p-8').html(errorHtml);
+        },
+
+        submitForm: function() {
+            const self = this;
+            console.log('FormEditarUsuario: Iniciando envío del formulario');
+
+            // Validar formulario
+            if (!this.validateForm()) {
+                this.showError('Por favor corrige los errores en el formulario');
+                return;
+            }
+
+            // Preparar datos del formulario
+            const formData = new FormData();
+
+            // Campos del formulario
+            formData.append('accion', 'editar_usuario');
+            formData.append('idusuario', $('#editar-usuario-id').val());
+            formData.append('nombre', $('#editar-nombre-usuario').val().trim());
+            formData.append('cargo', $('#editar-cargo-usuario').val().trim());
+            formData.append('direccion', $('#editar-direccion-usuario').val().trim() || 'Quito');
+            formData.append('telefono', $('#editar-telefono-usuario').val().trim());
+            formData.append('email', $('#editar-email-usuario').val().trim());
+            formData.append('rol', $('#editar-rol-usuario').val());
+            formData.append('sucursal_idsucursal', $('#editar-sucursal-usuario').val());
+            formData.append('estado', $('#editar-estado-usuario').val());
+
+            // Solo incluir password si se ingresó una nueva
+            const newPassword = $('#editar-password-usuario').val().trim();
+            if (newPassword) {
+                formData.append('password', newPassword);
+            }
+
+            // Log de datos del formulario
+            console.log('FormEditarUsuario: Datos del formulario:', {
+                idusuario: $('#editar-usuario-id').val(),
+                nombre: $('#editar-nombre-usuario').val().trim(),
+                cargo: $('#editar-cargo-usuario').val().trim(),
+                direccion: $('#editar-direccion-usuario').val().trim() || 'Quito',
+                telefono: $('#editar-telefono-usuario').val().trim(),
+                email: $('#editar-email-usuario').val().trim(),
+                rol: $('#editar-rol-usuario').val(),
+                sucursal_idsucursal: $('#editar-sucursal-usuario').val(),
+                estado: $('#editar-estado-usuario').val(),
+                password: newPassword ? 'Nueva contraseña proporcionada' : 'Sin cambio de contraseña'
+            });
+
+            // Imagen si existe (nueva imagen cargada)
+            const fileInput = document.getElementById('editar-usuario-imagen');
+            if (fileInput.files.length > 0) {
+                formData.append('imagen', fileInput.files[0]);
+                console.log('FormEditarUsuario: Nueva imagen adjunta:', fileInput.files[0].name, 'Tamaño:', fileInput.files[0].size);
+            } else {
+                console.log('FormEditarUsuario: Sin nueva imagen adjunta');
+            }
+
+            // Deshabilitar botón durante el envío
+            const submitButton = $('.bg-gradient-to-r.from-amber-600');
+            const originalText = submitButton.html();
+            submitButton.prop('disabled', true).html(`
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Actualizando...</span>
+            `);
+
+            // Enviar datos
+            console.log('FormEditarUsuario: Enviando datos al servidor...');
+            $.ajax({
+                url: 'ajax/usuarios.ajax.php',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: function(response) {
+                    console.log('FormEditarUsuario: Respuesta del servidor:', response);
+                    if (response.status === 'success') {
+                        // Toast de éxito
+                        const successToast = `
+                            <div class="max-w-xs bg-white border border-gray-200 rounded-xl shadow-lg dark:bg-neutral-800 dark:border-neutral-700" role="alert">
+                                <div class="flex p-4">
+                                    <div class="shrink-0">
+                                        <svg class="shrink-0 size-4 text-teal-500 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="ms-3">
+                                        <p class="text-sm text-gray-700 dark:text-neutral-400">Usuario actualizado exitosamente</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        showToast(successToast);
+
+                        // Cerrar modal
+                        const modal = document.getElementById('modal-editar-usuario');
+                        if (modal && window.HSOverlay) {
+                            window.HSOverlay.close(modal);
+                        }
+
+                        // Recargar lista de usuarios con delay para asegurar que BD esté actualizada
+                        console.log('FormEditarUsuario: Usuario actualizado exitosamente - Recargando lista...');
+
+                        // Mostrar indicador de recarga
+                        const originalGrid = document.getElementById('usuarios-grid');
+                        if (originalGrid) {
+                            originalGrid.style.opacity = '0.6';
+                            const loadingDiv = document.createElement('div');
+                            loadingDiv.id = 'usuarios-reloading-edit';
+                            loadingDiv.className = 'fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50';
+                            loadingDiv.innerHTML = `
+                                <div class="bg-white dark:bg-neutral-800 rounded-lg p-4 flex items-center gap-3 shadow-lg">
+                                    <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-amber-600"></div>
+                                    <span class="text-sm font-medium text-gray-700 dark:text-neutral-300">Actualizando lista de usuarios...</span>
+                                </div>
+                            `;
+                            document.body.appendChild(loadingDiv);
+                        }
+
+                        setTimeout(() => {
+                            console.log('FormEditarUsuario: Ejecutando recarga de usuarios...');
+                            if (window.UsuariosManager) {
+                                const emailEditado = $('#editar-email-usuario').val().trim();
+                                window.UsuariosManager.recargar();
+
+                                // Remover indicador de recarga y resaltar usuario editado
+                                setTimeout(() => {
+                                    const loadingDiv = document.getElementById('usuarios-reloading-edit');
+                                    if (loadingDiv) {
+                                        loadingDiv.remove();
+                                    }
+                                    if (originalGrid) {
+                                        originalGrid.style.opacity = '1';
+                                    }
+
+                                    // Resaltar el usuario recién editado
+                                    if (emailEditado) {
+                                        window.UsuariosManager.resaltarNuevoUsuario(emailEditado);
+                                    }
+                                }, 800);
+                            } else {
+                                console.error('FormEditarUsuario: window.UsuariosManager no está disponible');
+                            }
+                        }, 1500);
+
+                    } else {
+                        console.error('FormEditarUsuario: Error del servidor:', response.message);
+                        self.showError(response.message || 'Error al actualizar el usuario');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('FormEditarUsuario: Error en AJAX:', {xhr, status, error});
+                    console.error('FormEditarUsuario: Response text:', xhr.responseText);
+                    self.showError('Error de conexión con el servidor');
+                },
+                complete: function() {
+                    // Restaurar botón
+                    submitButton.prop('disabled', false).html(originalText);
+                }
+            });
+        },
+
+        resetForm: function() {
+            // Reset del formulario
+            $('#formEditarUsuario')[0].reset();
+
+            // Reset de la imagen
+            this.removeImage();
+
+            // Limpiar todos los mensajes de error, éxito y advertencia
+            $('.text-red-600, .text-green-600, .self-disable-warning').remove();
+
+            // Reset de estilos de campos
+            $('.border-red-300, .border-green-300').removeClass('border-red-300 focus:border-red-500 focus:ring-red-500 border-green-300 focus:border-green-500 focus:ring-green-500')
+                                                   .addClass('border-gray-300 focus:border-amber-500 focus:ring-amber-500');
+
+            // Reset del toggle de contraseña
+            $('#editar-password-usuario').attr('type', 'password');
+            $('#editar-eye-closed').removeClass('hidden');
+            $('#editar-eye-open').addClass('hidden');
+
+            // Restaurar opciones del select de estado
+            const estadoSelect = $('#editar-estado-usuario');
+            const opcionInactivo = estadoSelect.find('option[value="0"]');
+            if (opcionInactivo.length) {
+                opcionInactivo.prop('disabled', false);
+                opcionInactivo.text('❌ Inactivo');
+            }
+
+            // Limpiar datos originales
+            this.datosOriginales = null;
+
+            // Mostrar loading state
+            $('#editar-loading').removeClass('hidden');
+            $('#formEditarUsuario').addClass('hidden');
+        }
+    };
+
+    // Inicializar FormEditarUsuario
+    FormEditarUsuario.init();
+
+    // Event handler para el botón "Actualizar Usuario"
+    $(document).on('click', '.bg-gradient-to-r.from-amber-600', function(e) {
+        // Solo procesar si está dentro del modal editar usuario
+        if ($(this).closest('#modal-editar-usuario').length) {
+            e.preventDefault();
+            console.log('Click en botón Actualizar Usuario');
+            FormEditarUsuario.submitForm();
+        }
+    });
+
+    // Reset del formulario cuando se cierre el modal de editar
+    $(document).on('hidden.hs.overlay', '#modal-editar-usuario', function() {
+        FormEditarUsuario.resetForm();
+    });
+
+    // Inicializar FormEditarUsuario cuando se abra el modal de editar
+    $(document).on('shown.hs.overlay', '#modal-editar-usuario', function() {
+        FormEditarUsuario.init();
+    });
+
+    // Event handlers para paginación
+    $(document).on('click', '.btn-previous', function(e) {
+        e.preventDefault();
+        if (window.UsuariosManager) {
+            window.UsuariosManager.paginaAnterior();
+        }
+    });
+
+    $(document).on('click', '.btn-next', function(e) {
+        e.preventDefault();
+        if (window.UsuariosManager) {
+            window.UsuariosManager.paginaSiguiente();
+        }
+    });
+
+    // Event handler para el botón "Ver todos"
+    $(document).on('click', '#btn-ver-todos', function(e) {
+        e.preventDefault();
+
+        if (window.UsuariosManager) {
+            const isShowingAll = window.UsuariosManager.incluyeEliminados;
+            const newState = !isShowingAll;
+
+            // Cambiar el estado
+            window.UsuariosManager.incluyeEliminados = newState;
+
+            // Actualizar texto del botón
+            const btnText = $('#btn-ver-todos-text');
+            btnText.text(newState ? 'Ver activos' : 'Ver todos');
+
+            // Actualizar el filtro de estado automáticamente
+            if (newState) {
+                // Al activar "Ver todos", mostrar todos los estados (activos, inactivos y eliminados)
+                $('#filtro-estado').val(''); // Todos los estados
+                window.UsuariosManager.filters.estado = '';
+            } else {
+                // Al desactivar "Ver todos", volver a mostrar solo activos
+                $('#filtro-estado').val('1'); // Solo activos
+                window.UsuariosManager.filters.estado = '1';
+            }
+
+            // Resetear página a 1 y recargar
+            window.UsuariosManager.pagination.currentPage = 1;
+            window.UsuariosManager.cargarUsuarios();
+        }
+    });
+
+    // Función para eliminar usuario
+    function eliminarUsuario(userId) {
+        console.log('Eliminando usuario ID:', userId);
+
+        $.ajax({
+            url: 'ajax/usuarios.ajax.php',
+            type: 'POST',
+            data: {
+                accion: 'eliminar_usuario',
+                idusuario: userId
+            },
+            dataType: 'json',
+            beforeSend: function() {
+                // Mostrar indicador de carga
+                Swal.fire({
+                    title: 'Procesando...',
+                    text: 'Verificando dependencias del usuario',
+                    icon: 'info',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            },
+            success: function(response) {
+                console.log('Respuesta eliminación usuario:', response);
+
+                if (response.status === 'success') {
+                    // Mostrar mensaje diferenciado según el tipo de eliminación
+                    let iconType = response.tipo_eliminacion === 'desactivacion' ? 'warning' : 'success';
+                    let titleText = response.tipo_eliminacion === 'desactivacion' ? 'Usuario Desactivado' : 'Usuario Eliminado';
+
+                    Swal.fire({
+                        title: titleText,
+                        text: response.message,
+                        icon: iconType,
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#3085d6'
+                    }).then(() => {
+                        // Recargar la lista de usuarios
+                        if (window.UsuariosManager) {
+                            window.UsuariosManager.cargarUsuarios();
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: response.message || 'Error al eliminar usuario',
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#d33'
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error AJAX eliminar usuario:', {xhr, status, error});
+                Swal.fire({
+                    title: 'Error de Conexión',
+                    text: 'No se pudo conectar con el servidor. Intenta nuevamente.',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#d33'
+                });
+            }
+        });
+    }
+
+    // Exponer función logout globalmente
     window.logout = logout;
-    
-    // Verificar sesi�n si no estamos en la p�gina de login
+
+    // Verificar sesión si no estamos en la página de login
     if (!window.location.href.includes('login')) {
         verificarSesion();
     }

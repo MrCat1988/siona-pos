@@ -8,10 +8,7 @@
     <!-- DATATABLE CSS -->
     <link rel="stylesheet" href="./../node_modules/datatables.net-dt/css/dataTables.dataTables.min.css">
     <!-- <link rel="stylesheet" href="./../node_modules/datatables.net-responsive-dt/css/responsive.dataTables.min.css"> -->
-    <!-- USUARIOS CSS -->
-    <link rel="stylesheet" href="./views/css/usuarios.css">
-    <!-- TABLA USUARIOS CSS -->
-    <link rel="stylesheet" href="./views/css/usuarios-table.css">
+
 
 
     <title>Siona POS</title>
@@ -494,6 +491,11 @@
     <script src="./../node_modules/preline/dist/preline.js"></script>
 
     <!-- CUSTOMS SCRIPTS -->
+    <script>
+        // Variables globales para el sistema de usuarios
+        window.currentUserId = <?php echo json_encode($_SESSION['usuario_id'] ?? null); ?>;
+        window.currentUserEmail = <?php echo json_encode($_SESSION['usuario_email'] ?? null); ?>;
+    </script>
     <script src="./views/js/usuarios.js"></script>
 
 </body>
