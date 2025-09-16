@@ -772,33 +772,21 @@ $(document).ready(function() {
     // Sistema de manejo de formulario agregar usuario
     const FormAgregarUsuario = {
         init: function() {
-            console.log('FormAgregarUsuario: Inicializando...');
             this.setupDropzone();
             this.setupPasswordToggle();
             this.loadSucursales();
             this.bindEvents();
-            console.log('FormAgregarUsuario: Inicialización completa');
         },
 
         setupDropzone: function() {
-            console.log('FormAgregarUsuario: Configurando dropzone...');
             const dropzone = $('#image-dropzone');
             const fileInput = $('#usuario-imagen');
             const preview = $('#image-preview');
             const content = $('#dropzone-content');
             const removeBtn = $('#remove-image');
 
-            console.log('FormAgregarUsuario: Elementos encontrados:', {
-                dropzone: dropzone.length,
-                fileInput: fileInput.length,
-                preview: preview.length,
-                content: content.length,
-                removeBtn: removeBtn.length
-            });
-
             // Click en dropzone abre selector de archivos
             dropzone.on('click', function() {
-                console.log('FormAgregarUsuario: Click en dropzone');
                 fileInput.click();
             });
 
@@ -891,7 +879,6 @@ $(document).ready(function() {
         },
 
         loadSucursales: function() {
-            console.log('FormAgregarUsuario: Cargando sucursales...');
             $.ajax({
                 url: 'ajax/usuarios.ajax.php',
                 type: 'POST',
@@ -901,7 +888,6 @@ $(document).ready(function() {
                     $('#sucursal-usuario').html('<option value="">Cargando sucursales...</option>');
                 },
                 success: function(response) {
-                    console.log('FormAgregarUsuario: Respuesta sucursales:', response);
                     const select = $('#sucursal-usuario');
                     select.empty();
                     
@@ -912,7 +898,6 @@ $(document).ready(function() {
                         });
                     } else {
                         select.append('<option value="">No hay sucursales disponibles</option>');
-                        console.log('FormAgregarUsuario: No se encontraron sucursales o error en response');
                     }
                 },
                 error: function(xhr, status, error) {
@@ -923,7 +908,7 @@ $(document).ready(function() {
         },
 
         bindEvents: function() {
-            console.log('FormAgregarUsuario: Configurando eventos...');
+            // console.log('FormAgregarUsuario: Configurando eventos...');
             
             // Validación en tiempo real del email con debounce
             let emailTimeout;
@@ -957,7 +942,7 @@ $(document).ready(function() {
                 this.value = this.value.replace(/\D/g, '');
             });
             
-            console.log('FormAgregarUsuario: Eventos configurados exitosamente');
+            // console.log('FormAgregarUsuario: Eventos configurados exitosamente');
         },
 
         validateEmail: function() {
@@ -1541,12 +1526,12 @@ $(document).ready(function() {
         datosOriginales: null,
 
         init: function() {
-            console.log('FormEditarUsuario: Inicializando...');
+            // console.log('FormEditarUsuario: Inicializando...');
             this.setupDropzone();
             this.setupPasswordToggle();
             this.loadSucursales();
             this.bindEvents();
-            console.log('FormEditarUsuario: Inicialización completa');
+            // console.log('FormEditarUsuario: Inicialización completa');
         },
 
         cargarUsuario: function(userId) {
@@ -1658,7 +1643,7 @@ $(document).ready(function() {
         },
 
         setupDropzone: function() {
-            console.log('FormEditarUsuario: Configurando dropzone...');
+            // console.log('FormEditarUsuario: Configurando dropzone...');
             const dropzone = $('#editar-image-dropzone');
             const fileInput = $('#editar-usuario-imagen');
             const preview = $('#editar-image-preview');
@@ -1760,7 +1745,7 @@ $(document).ready(function() {
         },
 
         loadSucursales: function(sucursalSeleccionada = null) {
-            console.log('FormEditarUsuario: Cargando sucursales...', 'Sucursal a seleccionar:', sucursalSeleccionada);
+            // console.log('FormEditarUsuario: Cargando sucursales...', 'Sucursal a seleccionar:', sucursalSeleccionada);
             $.ajax({
                 url: 'ajax/usuarios.ajax.php',
                 type: 'POST',
@@ -1796,14 +1781,14 @@ $(document).ready(function() {
         },
 
         bindEvents: function() {
-            console.log('FormEditarUsuario: Configurando eventos...');
+            // console.log('FormEditarUsuario: Configurando eventos...');
 
             // Solo números en teléfono
             $('#editar-telefono-usuario').on('input', function() {
                 this.value = this.value.replace(/\D/g, '');
             });
 
-            console.log('FormEditarUsuario: Eventos configurados exitosamente');
+            // console.log('FormEditarUsuario: Eventos configurados exitosamente');
         },
 
         validateForm: function() {

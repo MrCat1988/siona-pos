@@ -47,6 +47,7 @@
         if (isset($_GET["route"])) {
             if (
                 $_GET["route"] == 'usuarios' ||
+                $_GET["route"] == 'sucursales' ||
                 $_GET["route"] == 'content'
 
 
@@ -497,6 +498,7 @@
         window.currentUserEmail = <?php echo json_encode($_SESSION['usuario_email'] ?? null); ?>;
     </script>
     <script src="./views/js/usuarios.js"></script>
+    <script src="./views/js/sucursales.js"></script>
 
 </body>
 

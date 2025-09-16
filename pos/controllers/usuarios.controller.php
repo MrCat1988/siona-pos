@@ -128,14 +128,9 @@ class UsuariosController {
             if ($page < 1) $page = 1;
             if ($limit < 1 || $limit > 50) $limit = 6; // Máximo 50 por página
 
-            // Debug logging para verificar tenant_id
-            error_log("obtenerUsuarios - tenant_id de sesión: " . $_SESSION['tenant_id']);
-            error_log("obtenerUsuarios - parámetros: page=$page, limit=$limit, estado=$estado, incluir_eliminados=" . ($incluir_eliminados ? 'true' : 'false'));
-
             $resultado = UsuariosModel::obtenerUsuarios($_SESSION['tenant_id'], $page, $limit, $estado, $incluir_eliminados);
 
             if ($resultado === false || !isset($resultado['usuarios'])) {
-                error_log("obtenerUsuarios - ERROR: Resultado inválido del modelo");
                 echo json_encode(array("status" => "error", "message" => "Error al consultar base de datos"));
                 return;
             }
@@ -162,9 +157,6 @@ class UsuariosController {
         }
         
         // Debug información recibida (comentado para evitar problemas de output)
-        // error_log("crearUsuario - POST data: " . json_encode($_POST));
-        // error_log("crearUsuario - FILES data: " . json_encode($_FILES));
-        
         if ($_POST) {
             // Validar CSRF token si está disponible
             if (isset($_POST['csrf_token']) && isset($_SESSION['csrf_token'])) {
@@ -176,7 +168,6 @@ class UsuariosController {
             
             // Manejar subida de imagen con estructura multitenant
             $thumbnail = null;
-            error_log("Procesando imagen - FILES: " . json_encode($_FILES));
             
             if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] == 0) {
                 // Crear estructura de directorios por tenant (ruta relativa desde el AJAX)
