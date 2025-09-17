@@ -48,6 +48,8 @@
             if (
                 $_GET["route"] == 'usuarios' ||
                 $_GET["route"] == 'sucursales' ||
+                $_GET["route"] == 'categorias' ||
+                $_GET["route"] == 'productos' ||
                 $_GET["route"] == 'content'
 
 
@@ -499,6 +501,8 @@
     </script>
     <script src="./views/js/usuarios.js"></script>
     <script src="./views/js/sucursales.js"></script>
+    <script src="./views/js/categorias.js"></script>
+    <script src="./views/js/productos.js"></script>
 
 </body>
 
