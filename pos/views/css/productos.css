@@ -1,0 +1,208 @@
+/* Productos Modal Styles */
+
+/* Ocultar controles spinner de inputs number */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* Estilos específicos para campos de stock */
+.stock-input {
+    appearance: textfield;
+}
+
+.stock-input::-webkit-outer-spin-button,
+.stock-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Animaciones suaves para validaciones */
+.stock-validation-message {
+    transition: all 0.3s ease-in-out;
+    transform-origin: top;
+}
+
+.stock-validation-message.hidden {
+    transform: scaleY(0);
+    opacity: 0;
+}
+
+.stock-validation-message:not(.hidden) {
+    transform: scaleY(1);
+    opacity: 1;
+}
+
+/* Barra de progreso personalizada */
+.stock-progress-bar {
+    transition: width 0.5s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+.stock-progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Estados de focus mejorados para campos de stock */
+.stock-input:focus {
+    box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.1);
+    border-color: rgb(147, 51, 234);
+}
+
+/* Indicadores de estado */
+.stock-status-badge {
+    transition: all 0.3s ease;
+    font-weight: 500;
+    letter-spacing: 0.025em;
+}
+
+.stock-status-badge.low {
+    background-color: rgb(254, 226, 226);
+    color: rgb(153, 27, 27);
+}
+
+.stock-status-badge.normal {
+    background-color: rgb(254, 249, 195);
+    color: rgb(146, 64, 14);
+}
+
+.stock-status-badge.high {
+    background-color: rgb(220, 252, 231);
+    color: rgb(21, 128, 61);
+}
+
+.stock-status-badge.over {
+    background-color: rgb(219, 234, 254);
+    color: rgb(30, 58, 138);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .stock-status-badge.low {
+        background-color: rgba(127, 29, 29, 0.3);
+        color: rgb(248, 113, 113);
+    }
+
+    .stock-status-badge.normal {
+        background-color: rgba(146, 64, 14, 0.3);
+        color: rgb(251, 191, 36);
+    }
+
+    .stock-status-badge.high {
+        background-color: rgba(21, 128, 61, 0.3);
+        color: rgb(74, 222, 128);
+    }
+
+    .stock-status-badge.over {
+        background-color: rgba(30, 58, 138, 0.3);
+        color: rgb(96, 165, 250);
+    }
+}
+
+/* Image upload enhancements */
+.image-dropzone-active {
+    border-color: #3B82F6 !important;
+    background-color: rgb(59 130 246 / 0.1) !important;
+    transform: scale(1.02);
+}
+
+.image-dropzone-error {
+    border-color: #EF4444 !important;
+    background-color: rgb(239 68 68 / 0.1) !important;
+}
+
+.image-compression-indicator {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.image-upload-progress {
+    transition: width 0.3s ease-in-out;
+}
+
+.file-info-badge {
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.9);
+}
+
+@media (prefers-color-scheme: dark) {
+    .file-info-badge {
+        background: rgba(23, 23, 23, 0.9);
+    }
+}
+
+/* Image optimization animations */
+@keyframes imageProcess {
+    0% { opacity: 0.5; transform: scale(0.95); }
+    50% { opacity: 0.8; transform: scale(1.02); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.image-processed {
+    animation: imageProcess 0.6s ease-out;
+}
+
+/* Progressive loading effect */
+.image-loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+@media (prefers-color-scheme: dark) {
+    .image-loading-skeleton {
+        background: linear-gradient(90deg, #374151 25%, #4B5563 50%, #374151 75%);
+        background-size: 200% 100%;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .stock-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .stock-indicator {
+        padding: 0.75rem;
+    }
+
+    #dropzone-container {
+        width: 10rem;
+        height: 10rem;
+    }
+
+    #file-info {
+        font-size: 10px;
+    }
+}

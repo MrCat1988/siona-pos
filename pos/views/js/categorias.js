@@ -105,6 +105,14 @@ function showToast(toastHtml) {
                 this.pagination.currentPage = page;
             }
 
+            console.log('🔄 Cargando categorías...', {
+                page: this.pagination.currentPage,
+                limit: this.pagination.limit,
+                estado: this.filters.estado,
+                incluir_eliminadas: this.incluyeEliminadas,
+                tenantId: window.TENANT_ID
+            });
+
             $.ajax({
                 url: 'ajax/categorias.ajax.php',
                 type: 'POST',
@@ -117,10 +125,15 @@ function showToast(toastHtml) {
                 },
                 dataType: 'json',
                 beforeSend: function() {
+                    console.log('📤 Enviando petición AJAX...');
                     self.mostrarLoading();
                 },
                 success: function(respuesta) {
+                    console.log('📥 Respuesta recibida:', respuesta);
+
                     if (respuesta.status === 'success' && respuesta.data) {
+                        console.log('✅ Datos válidos recibidos:', respuesta.data);
+
                         // Actualizar datos de paginación
                         self.data = respuesta.data.categorias || [];
                         self.pagination.total = respuesta.data.total || 0;
@@ -128,24 +141,37 @@ function showToast(toastHtml) {
                         self.pagination.hasPrevious = respuesta.data.has_previous || false;
                         self.pagination.hasNext = respuesta.data.has_next || false;
 
+                        console.log('📊 Datos procesados:', {
+                            categorias: self.data.length,
+                            total: self.pagination.total,
+                            pages: self.pagination.totalPages
+                        });
+
                         // Aplicar filtros locales
                         self.aplicarFiltros();
 
                         // Mostrar resultados
                         if (self.filteredData.length > 0) {
+                            console.log('🎨 Mostrando categorías...');
                             self.mostrarCategorias();
                         } else {
+                            console.log('📭 Mostrando estado vacío...');
                             self.mostrarEmpty();
                         }
 
                         self.actualizarFooterPaginacion();
                     } else {
-                        console.error('Error en la respuesta:', respuesta.message);
+                        console.error('❌ Error en la respuesta:', respuesta.message || respuesta);
                         self.mostrarError();
                     }
                 },
                 error: function(xhr, status, error) {
-                    console.error('Error AJAX:', {xhr, status, error});
+                    console.error('❌ Error AJAX:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        responseText: xhr.responseText,
+                        error: error
+                    });
                     self.mostrarError();
                 }
             });
@@ -742,7 +768,14 @@ function showToast(toastHtml) {
     };
 
     // Inicializar componentes cuando el DOM esté listo
+    console.log('Inicializando categorías...', {
+        tenantId: window.TENANT_ID,
+        location: window.location.href,
+        includes: window.location.href.includes('categorias')
+    });
+
     if (window.TENANT_ID && window.location.href.includes('categorias')) {
+        console.log('✅ Inicializando CategoriasManager...');
         CategoriasManager.init();
 
         // Inicializar FormAgregarCategoria inmediatamente (no esperar al modal)
@@ -750,6 +783,11 @@ function showToast(toastHtml) {
 
         // Inicializar FormEditarCategoria inmediatamente
         FormEditarCategoria.init();
+    } else {
+        console.log('❌ No se puede inicializar categorías:', {
+            tenantId: window.TENANT_ID,
+            isCategoriasPage: window.location.href.includes('categorias')
+        });
     }
 
     // Event handlers para los modales

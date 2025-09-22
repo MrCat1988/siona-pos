@@ -1,15 +1,8 @@
 <?php
 
-// Verificar desde donde se está llamando este archivo
-if (file_exists("../models/categorias.model.php")) {
-    require_once "../models/categorias.model.php";
-    require_once "../models/connection.php";
-} else {
-    require_once "models/categorias.model.php";
-    require_once "models/connection.php";
-}
+require_once "../models/connection.php";
 
-class CategoriasController {
+class ControladorCategorias {
 
     // Verificar sesión activa
     public static function verificarSesion() {
@@ -43,7 +36,7 @@ class CategoriasController {
             if ($page < 1) $page = 1;
             if ($limit < 1 || $limit > 50) $limit = 6; // Máximo 50 por página
 
-            $resultado = CategoriasModel::obtenerCategorias($_SESSION['tenant_id'], $page, $limit, $estado, $incluir_eliminadas);
+            $resultado = ModeloCategorias::obtenerCategorias($_SESSION['tenant_id'], $page, $limit, $estado, $incluir_eliminadas);
 
             if ($resultado === false || !isset($resultado['categorias'])) {
                 echo json_encode(array("status" => "error", "message" => "Error al consultar base de datos"));
@@ -86,7 +79,7 @@ class CategoriasController {
 
         if (isset($_POST['idcategoria'])) {
             $idcategoria = $_POST['idcategoria'];
-            $categoria = CategoriasModel::obtenerCategoria($idcategoria, $_SESSION['tenant_id']);
+            $categoria = ModeloCategorias::obtenerCategoria($idcategoria, $_SESSION['tenant_id']);
 
             if ($categoria) {
                 echo json_encode(array("status" => "success", "data" => $categoria));
@@ -129,7 +122,7 @@ class CategoriasController {
             }
 
             // Verificar que no exista otra categoría con el mismo nombre en el tenant
-            $nombreExiste = CategoriasModel::verificarNombreExiste($_POST['nombre'], $_SESSION['tenant_id']);
+            $nombreExiste = ModeloCategorias::verificarNombreExiste($_POST['nombre'], $_SESSION['tenant_id']);
             if ($nombreExiste) {
                 echo json_encode(array("status" => "error", "message" => "Ya existe una categoría con este nombre"));
                 return;
@@ -142,7 +135,7 @@ class CategoriasController {
                 "tenant_id" => $_SESSION['tenant_id']
             );
 
-            $respuesta = CategoriasModel::crearCategoria($datos);
+            $respuesta = ModeloCategorias::crearCategoria($datos);
 
             if ($respuesta) {
                 echo json_encode(array("status" => "success", "message" => "Categoría creada exitosamente"));
@@ -183,7 +176,7 @@ class CategoriasController {
             $idcategoria = $_POST['idcategoria'];
 
             // Verificar que no exista otra categoría con el mismo nombre en el tenant (excluyendo la actual)
-            $nombreExiste = CategoriasModel::verificarNombreExiste($_POST['nombre'], $_SESSION['tenant_id'], $idcategoria);
+            $nombreExiste = ModeloCategorias::verificarNombreExiste($_POST['nombre'], $_SESSION['tenant_id'], $idcategoria);
             if ($nombreExiste) {
                 echo json_encode(array("status" => "error", "message" => "Ya existe otra categoría con este nombre"));
                 return;
@@ -196,7 +189,7 @@ class CategoriasController {
                 "estado" => $_POST['estado'] ?? 1
             );
 
-            $respuesta = CategoriasModel::editarCategoria($datos, $_SESSION['tenant_id']);
+            $respuesta = ModeloCategorias::editarCategoria($datos, $_SESSION['tenant_id']);
 
             if ($respuesta) {
                 echo json_encode(array("status" => "success", "message" => "Categoría actualizada exitosamente"));
@@ -231,10 +224,10 @@ class CategoriasController {
             }
 
             // Verificar si la categoría tiene dependencias (productos asociados)
-            $dependencias = CategoriasModel::verificarDependenciasCategoria($idcategoria, $_SESSION['tenant_id']);
+            $dependencias = ModeloCategorias::verificarDependenciasCategoria($idcategoria, $_SESSION['tenant_id']);
 
             // Proceder con la eliminación (soft delete)
-            $respuesta = CategoriasModel::eliminarCategoria($idcategoria, $_SESSION['tenant_id']);
+            $respuesta = ModeloCategorias::eliminarCategoria($idcategoria, $_SESSION['tenant_id']);
 
             if ($respuesta) {
                 // Mensaje dependiendo de si tiene dependencias o no
@@ -255,6 +248,37 @@ class CategoriasController {
             }
         } else {
             echo json_encode(array("status" => "error", "message" => "ID de categoría requerido"));
+        }
+    }
+
+    /*=============================================
+    OBTENER CATEGORÍAS PARA PRODUCTOS (WRAPPER)
+    =============================================*/
+    static public function ctrObtenerCategorias($tenantId) {
+
+        try {
+            $categorias = ModeloCategorias::obtenerCategorias($tenantId, 1, 100, 1, false);
+
+            if ($categorias === false || !isset($categorias['categorias'])) {
+                return array(
+                    "success" => false,
+                    "message" => "Error al consultar base de datos",
+                    "categorias" => array()
+                );
+            }
+
+            return array(
+                "success" => true,
+                "categorias" => $categorias['categorias'],
+                "total" => $categorias['total']
+            );
+
+        } catch (Exception $e) {
+            return array(
+                "success" => false,
+                "message" => "Error interno: " . $e->getMessage(),
+                "categorias" => array()
+            );
         }
     }
 }

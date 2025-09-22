@@ -9,6 +9,11 @@
     <link rel="stylesheet" href="./../node_modules/datatables.net-dt/css/dataTables.dataTables.min.css">
     <!-- <link rel="stylesheet" href="./../node_modules/datatables.net-responsive-dt/css/responsive.dataTables.min.css"> -->
 
+    <?php if (isset($_GET["route"]) && $_GET["route"] == 'productos'): ?>
+    <!-- PRODUCTOS CSS -->
+    <link rel="stylesheet" href="views/css/productos.css">
+    <?php endif; ?>
+
 
 
     <title>Siona POS</title>

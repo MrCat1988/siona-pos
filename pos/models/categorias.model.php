@@ -2,7 +2,7 @@
 
 require_once "connection.php";
 
-class CategoriasModel {
+class ModeloCategorias {
 
     // Obtener categorías con paginación
     public static function obtenerCategorias($tenant_id, $page = 1, $limit = 6, $estado = null, $incluir_eliminadas = false) {
@@ -84,8 +84,13 @@ class CategoriasModel {
         }
     }
 
-    // Obtener una categoría específica
+    // Obtener una categoría específica (alias para compatibilidad con AJAX)
     public static function obtenerCategoria($idcategoria, $tenant_id) {
+        return self::obtenerCategoriaPorId($idcategoria, $tenant_id);
+    }
+
+    // Obtener una categoría específica por ID
+    public static function obtenerCategoriaPorId($idcategoria, $tenant_id) {
         try {
             $conexion = Connection::connect();
             $stmt = $conexion->prepare("
@@ -101,7 +106,7 @@ class CategoriasModel {
             return $stmt->fetch(PDO::FETCH_ASSOC);
 
         } catch (Exception $e) {
-            error_log("Error en obtenerCategoria: " . $e->getMessage());
+            error_log("Error en obtenerCategoriaPorId: " . $e->getMessage());
             return false;
         }
     }
@@ -186,7 +191,7 @@ class CategoriasModel {
             $resultado = $stmt->execute();
 
             if ($resultado) {
-                return true;
+                return $conexion->lastInsertId();
             } else {
                 return false;
             }
@@ -198,7 +203,7 @@ class CategoriasModel {
     }
 
     // Editar categoría
-    public static function editarCategoria($datos, $tenant_id) {
+    public static function editarCategoria($idcategoria, $datos, $tenant_id) {
         try {
             $conexion = Connection::connect();
             $stmt = $conexion->prepare("
@@ -213,7 +218,7 @@ class CategoriasModel {
             $stmt->bindParam(':nombre', $datos['nombre'], PDO::PARAM_STR);
             $stmt->bindParam(':descripcion', $datos['descripcion'], PDO::PARAM_STR);
             $stmt->bindParam(':estado', $datos['estado'], PDO::PARAM_INT);
-            $stmt->bindParam(':idcategoria', $datos['idcategoria'], PDO::PARAM_INT);
+            $stmt->bindParam(':idcategoria', $idcategoria, PDO::PARAM_INT);
             $stmt->bindParam(':tenant_id', $tenant_id, PDO::PARAM_INT);
 
             return $stmt->execute();

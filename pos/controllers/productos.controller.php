@@ -11,8 +11,8 @@ class ControladorProductos {
             $ultimoCodigo = ModeloProductos::mdlObtenerUltimoCodigo($tenantId);
 
             if ($ultimoCodigo && !empty($ultimoCodigo)) {
-                // Extraer la parte numérica del último código (8 dígitos exactos)
-                preg_match('/PROD-(\d{8})/', $ultimoCodigo, $matches);
+                // Extraer la parte numérica del último código (7 dígitos exactos)
+                preg_match('/P(\d{7})/', $ultimoCodigo, $matches);
 
                 if (isset($matches[1])) {
                     $ultimoNumero = intval($matches[1]);
@@ -26,8 +26,8 @@ class ControladorProductos {
                 $siguienteNumero = 1;
             }
 
-            // Formatear con padding de 8 dígitos para asegurar 00000001
-            $codigo = "PROD-" . str_pad($siguienteNumero, 8, "0", STR_PAD_LEFT);
+            // Formatear con padding de 7 dígitos para asegurar P0000001 (8 caracteres total)
+            $codigo = "P" . str_pad($siguienteNumero, 7, "0", STR_PAD_LEFT);
 
             return array(
                 "success" => true,
@@ -66,11 +66,35 @@ class ControladorProductos {
     }
 
     /*=============================================
+    VERIFICAR SI CÓDIGO AUXILIAR EXISTE
+    =============================================*/
+    static public function ctrVerificarCodigoAuxiliarExiste($codigoAuxiliar, $tenantId, $productoId = null) {
+
+        try {
+            $existe = ModeloProductos::mdlVerificarCodigoAuxiliarExiste($codigoAuxiliar, $tenantId, $productoId);
+
+            return array(
+                "success" => true,
+                "existe" => $existe,
+                "codigo_auxiliar" => $codigoAuxiliar
+            );
+
+        } catch (Exception $e) {
+            return array(
+                "success" => false,
+                "message" => "Error al verificar código auxiliar: " . $e->getMessage(),
+                "existe" => false
+            );
+        }
+    }
+
+    /*=============================================
     CREAR PRODUCTO
     =============================================*/
     static public function ctrCrearProducto($datos) {
 
         try {
+
             // Validaciones básicas
             if (empty($datos["codigo"]) || empty($datos["descripcion"]) || empty($datos["categoria_idcategoria"])) {
                 return array(
@@ -94,7 +118,7 @@ class ControladorProductos {
 
             $resultado = ModeloProductos::mdlCrearProducto($datos);
 
-            if ($resultado) {
+            if ($resultado !== false) {
                 return array(
                     "success" => true,
                     "message" => "Producto creado exitosamente",
@@ -205,6 +229,9 @@ class ControladorProductos {
                     "message" => "Producto actualizado exitosamente"
                 );
             } else {
+                error_log("Error en actualización - Modelo retornó false");
+                error_log("ID Producto: " . $idProducto . ", Tenant: " . $tenantId);
+                error_log("Datos enviados: " . print_r($datos, true));
                 return array(
                     "success" => false,
                     "message" => "Error al actualizar el producto"
@@ -212,9 +239,12 @@ class ControladorProductos {
             }
 
         } catch (Exception $e) {
+            error_log("Error en ctrActualizarProducto: " . $e->getMessage());
+            error_log("Datos recibidos: " . print_r($datos, true));
             return array(
                 "success" => false,
-                "message" => "Error interno: " . $e->getMessage()
+                "message" => "Error interno: " . $e->getMessage(),
+                "debug" => $e->getFile() . ":" . $e->getLine()
             );
         }
     }

@@ -16,8 +16,8 @@ class ModeloProductos {
                 INNER JOIN categoria c ON p.categoria_idcategoria = c.idcategoria
                 WHERE c.tenant_id = :tenant_id
                 AND p.deleted_at IS NULL
-                AND p.codigo REGEXP '^PROD-[0-9]{8}$'
-                ORDER BY CAST(SUBSTRING(p.codigo, 6) AS UNSIGNED) DESC
+                AND p.codigo REGEXP '^P[0-9]{7}$'
+                ORDER BY CAST(SUBSTRING(p.codigo, 2) AS UNSIGNED) DESC
                 LIMIT 1
             ");
 
@@ -66,6 +66,50 @@ class ModeloProductos {
     }
 
     /*=============================================
+    VERIFICAR SI CÓDIGO AUXILIAR EXISTE
+    =============================================*/
+    static public function mdlVerificarCodigoAuxiliarExiste($codigoAuxiliar, $tenantId, $productoId = null) {
+
+        try {
+            $sql = "
+                SELECT COUNT(*)
+                FROM producto p
+                INNER JOIN categoria c ON p.categoria_idcategoria = c.idcategoria
+                WHERE p.codigo_auxiliar = :codigo_auxiliar
+                AND c.tenant_id = :tenant_id
+                AND p.deleted_at IS NULL
+            ";
+
+            $params = array(
+                ":codigo_auxiliar" => $codigoAuxiliar,
+                ":tenant_id" => $tenantId
+            );
+
+            // Si se está editando un producto, excluirlo de la búsqueda
+            if ($productoId !== null) {
+                $sql .= " AND p.idproducto != :producto_id";
+                $params[":producto_id"] = $productoId;
+            }
+
+            $stmt = Connection::connect()->prepare($sql);
+
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+
+            $stmt->execute();
+            $count = $stmt->fetch(PDO::FETCH_COLUMN);
+            $stmt->closeCursor();
+
+            return $count > 0;
+
+        } catch (Exception $e) {
+            error_log("Error en mdlVerificarCodigoAuxiliarExiste: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /*=============================================
     CREAR PRODUCTO
     =============================================*/
     static public function mdlCrearProducto($datos) {
@@ -90,9 +134,10 @@ class ModeloProductos {
                     peso,
                     imagen,
                     tipo_producto,
-                    graba_iva,
+                    codigo_iva,
                     porcentaje_iva,
                     graba_ice,
+                    codigo_ice,
                     porcentaje_ice,
                     es_material_construccion,
                     codigo_material_construccion,
@@ -116,9 +161,10 @@ class ModeloProductos {
                     :peso,
                     :imagen,
                     :tipo_producto,
-                    :graba_iva,
+                    :codigo_iva,
                     :porcentaje_iva,
                     :graba_ice,
+                    :codigo_ice,
                     :porcentaje_ice,
                     :es_material_construccion,
                     :codigo_material_construccion,
@@ -144,9 +190,10 @@ class ModeloProductos {
             $stmt->bindParam(":peso", $datos["peso"], PDO::PARAM_STR);
             $stmt->bindParam(":imagen", $datos["imagen"], PDO::PARAM_STR);
             $stmt->bindParam(":tipo_producto", $datos["tipo_producto"], PDO::PARAM_STR);
-            $stmt->bindParam(":graba_iva", $datos["graba_iva"], PDO::PARAM_INT);
+            $stmt->bindParam(":codigo_iva", $datos["codigo_iva"], PDO::PARAM_STR);
             $stmt->bindParam(":porcentaje_iva", $datos["porcentaje_iva"], PDO::PARAM_STR);
             $stmt->bindParam(":graba_ice", $datos["graba_ice"], PDO::PARAM_INT);
+            $stmt->bindParam(":codigo_ice", $datos["codigo_ice"], PDO::PARAM_STR);
             $stmt->bindParam(":porcentaje_ice", $datos["porcentaje_ice"], PDO::PARAM_STR);
             $stmt->bindParam(":es_material_construccion", $datos["es_material_construccion"], PDO::PARAM_INT);
             $stmt->bindParam(":codigo_material_construccion", $datos["codigo_material_construccion"], PDO::PARAM_STR);
@@ -264,19 +311,57 @@ class ModeloProductos {
                 $params[":$campo"] = $valor;
             }
 
-            $sql = "
-                UPDATE producto p
+            // Verificar que el producto pertenece al tenant antes de actualizar
+            $checkStmt = Connection::connect()->prepare("
+                SELECT p.idproducto
+                FROM producto p
                 INNER JOIN categoria c ON p.categoria_idcategoria = c.idcategoria
-                SET " . implode(", ", $campos) . "
                 WHERE p.idproducto = :id
                 AND c.tenant_id = :tenant_id
+                AND p.deleted_at IS NULL
+            ");
+            $checkStmt->bindParam(":id", $idProducto, PDO::PARAM_INT);
+            $checkStmt->bindParam(":tenant_id", $tenantId, PDO::PARAM_INT);
+            $checkStmt->execute();
+
+            if ($checkStmt->rowCount() == 0) {
+                throw new Exception("Producto no encontrado o no pertenece al tenant");
+            }
+            $checkStmt->closeCursor();
+
+            // Si tenemos nueva categoria, verificar que pertenece al tenant
+            if (isset($datos['categoria_idcategoria'])) {
+                $catStmt = Connection::connect()->prepare("
+                    SELECT idcategoria
+                    FROM categoria
+                    WHERE idcategoria = :cat_id
+                    AND tenant_id = :tenant_id
+                    AND deleted_at IS NULL
+                ");
+                $catStmt->bindParam(":cat_id", $datos['categoria_idcategoria'], PDO::PARAM_INT);
+                $catStmt->bindParam(":tenant_id", $tenantId, PDO::PARAM_INT);
+                $catStmt->execute();
+
+                if ($catStmt->rowCount() == 0) {
+                    throw new Exception("Categoría no encontrada o no pertenece al tenant");
+                }
+                $catStmt->closeCursor();
+            }
+
+            $sql = "
+                UPDATE producto p
+                SET " . implode(", ", $campos) . "
+                WHERE p.idproducto = :id
                 AND p.deleted_at IS NULL
             ";
 
             $stmt = Connection::connect()->prepare($sql);
 
+            // Bind solo los parámetros del UPDATE, no el tenant_id
             foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
+                if ($key !== ':tenant_id') {
+                    $stmt->bindValue($key, $value);
+                }
             }
 
             $resultado = $stmt->execute();
@@ -286,6 +371,8 @@ class ModeloProductos {
 
         } catch (Exception $e) {
             error_log("Error en mdlActualizarProducto: " . $e->getMessage());
+            error_log("SQL generado: " . $sql);
+            error_log("Parámetros: " . print_r($params, true));
             return false;
         }
     }
