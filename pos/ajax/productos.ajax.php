@@ -429,6 +429,51 @@ class AjaxProductos {
             ));
         }
     }
+
+    /*=============================================
+    ELIMINAR PRODUCTO (SOFT DELETE)
+    =============================================*/
+    public function ajaxEliminarProducto() {
+
+        try {
+            // Validar parámetros requeridos
+            if (!isset($_POST["id"]) || empty($_POST["id"])) {
+                echo json_encode(array("success" => false, "message" => "ID del producto es requerido"));
+                return;
+            }
+
+            if (!isset($_SESSION["tenant_id"]) || empty($_SESSION["tenant_id"])) {
+                echo json_encode(array("success" => false, "message" => "Tenant ID es requerido"));
+                return;
+            }
+
+            $idProducto = intval($_POST["id"]);
+            $tenantId = $_SESSION["tenant_id"];
+
+            // Obtener datos del producto antes de eliminarlo (especialmente la imagen)
+            $productoActual = ControladorProductos::ctrObtenerProductoPorId($idProducto, $tenantId);
+            $imagenAnterior = null;
+
+            if ($productoActual && $productoActual["success"] && !empty($productoActual["producto"]["imagen"])) {
+                $imagenAnterior = $productoActual["producto"]["imagen"];
+            }
+
+            $respuesta = ControladorProductos::ctrEliminarProducto($idProducto, $tenantId);
+
+            // Si la eliminación fue exitosa y había imagen, eliminar el archivo físico
+            if ($respuesta["success"] && $imagenAnterior) {
+                $this->eliminarImagenAnterior($imagenAnterior);
+            }
+
+            echo json_encode($respuesta);
+
+        } catch (Exception $e) {
+            echo json_encode(array(
+                "success" => false,
+                "message" => "Error interno: " . $e->getMessage()
+            ));
+        }
+    }
 }
 
 /*=============================================
@@ -470,6 +515,10 @@ if (isset($_POST["action"])) {
 
         case "actualizarProducto":
             $ajax->ajaxActualizarProducto();
+            break;
+
+        case "eliminarProducto":
+            $ajax->ajaxEliminarProducto();
             break;
 
         default:

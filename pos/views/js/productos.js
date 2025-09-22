@@ -273,6 +273,8 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarValidacionPrecios();
     inicializarDescuentos();
     inicializarFormularioEditarProducto();
+    inicializarFiltros();
+    cargarCategoriasFiltro();
 
 });
 
@@ -527,14 +529,28 @@ function limpiarYCargarProductos(productos) {
  * Crea el HTML para una card de producto
  */
 function crearCardProducto(producto) {
-    const estadoClass = producto.estado == 1 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-    const estadoText = producto.estado == 1 ? '✅ Activo' : '❌ Inactivo';
+    // Verificar si el producto está eliminado
+    const esEliminado = producto.deleted_at !== null && producto.deleted_at !== undefined;
+
+    let estadoClass, estadoText;
+    if (esEliminado) {
+        estadoClass = 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+        estadoText = '🗑️ Eliminado';
+    } else {
+        estadoClass = producto.estado == 1 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+        estadoText = producto.estado == 1 ? '✅ Activo' : '❌ Inactivo';
+    }
+
     const imagenUrl = producto.imagen ? producto.imagen : null;
 
+    // Agregar clases especiales para productos eliminados
+    const cardClass = esEliminado ? 'opacity-60 grayscale' : '';
+    const headerClass = esEliminado ? 'bg-gradient-to-br from-gray-50 via-gray-100 to-gray-150 dark:from-gray-900/20 dark:via-gray-800/20 dark:to-gray-700/20' : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20';
+
     return `
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 dark:bg-neutral-800 dark:border-neutral-700 overflow-hidden group hover:-translate-y-2">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 dark:bg-neutral-800 dark:border-neutral-700 overflow-hidden group hover:-translate-y-2 ${cardClass}">
             <!-- Header con imagen del producto -->
-            <div class="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 p-6">
+            <div class="relative ${headerClass} p-6">
                 <div class="flex items-center justify-between mb-4">
                     <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${estadoClass}">
                         ${estadoText}
@@ -547,39 +563,69 @@ function crearCardProducto(producto) {
                 </div>
 
                 <div class="text-center">
-                    ${imagenUrl ?
-                        `<div class="w-20 h-20 mx-auto mb-4 rounded-2xl overflow-hidden shadow-lg">
-                            <img src="${imagenUrl}" alt="${producto.descripcion}" class="w-full h-full object-cover">
-                        </div>` :
-                        `<div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg relative overflow-hidden">
-                            <!-- Patrón de fondo sutil -->
+                    ${esEliminado ?
+                        // Icono especial para productos eliminados
+                        `<div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center shadow-lg relative overflow-hidden">
+                            <!-- Patrón de fondo para eliminados -->
                             <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
 
-                            <!-- SVG de producto con etiqueta de precio -->
+                            <!-- Icono de producto eliminado -->
                             <div class="relative">
-                                <!-- Caja del producto -->
-                                <svg class="w-12 h-12 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <!-- Caja tachada -->
+                                <svg class="w-10 h-10 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                           d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                 </svg>
 
-                                <!-- Etiqueta de precio -->
-                                <div class="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center shadow-sm">
-                                    <svg class="w-2.5 h-2.5 text-yellow-800" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                <!-- X grande encima -->
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
                                     </svg>
                                 </div>
 
-                                <!-- Código de barras pequeño -->
-                                <div class="absolute -bottom-1 -left-1 flex gap-0.5 opacity-80">
-                                    <div class="w-0.5 h-2 bg-white rounded-full"></div>
-                                    <div class="w-0.5 h-1.5 bg-white rounded-full"></div>
-                                    <div class="w-0.5 h-2 bg-white rounded-full"></div>
-                                    <div class="w-0.5 h-1 bg-white rounded-full"></div>
-                                    <div class="w-0.5 h-2 bg-white rounded-full"></div>
+                                <!-- Badge de eliminado -->
+                                <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center shadow-sm">
+                                    <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
                                 </div>
                             </div>
-                        </div>`
+                        </div>` :
+                        // Lógica normal para productos no eliminados
+                        imagenUrl ?
+                            `<div class="w-20 h-20 mx-auto mb-4 rounded-2xl overflow-hidden shadow-lg">
+                                <img src="${imagenUrl}" alt="${producto.descripcion}" class="w-full h-full object-cover">
+                            </div>` :
+                            `<div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg relative overflow-hidden">
+                                <!-- Patrón de fondo sutil -->
+                                <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+
+                                <!-- SVG de producto con etiqueta de precio -->
+                                <div class="relative">
+                                    <!-- Caja del producto -->
+                                    <svg class="w-12 h-12 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+
+                                    <!-- Etiqueta de precio -->
+                                    <div class="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center shadow-sm">
+                                        <svg class="w-2.5 h-2.5 text-yellow-800" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                        </svg>
+                                    </div>
+
+                                    <!-- Código de barras pequeño -->
+                                    <div class="absolute -bottom-1 -left-1 flex gap-0.5 opacity-80">
+                                        <div class="w-0.5 h-2 bg-white rounded-full"></div>
+                                        <div class="w-0.5 h-1.5 bg-white rounded-full"></div>
+                                        <div class="w-0.5 h-2 bg-white rounded-full"></div>
+                                        <div class="w-0.5 h-1 bg-white rounded-full"></div>
+                                        <div class="w-0.5 h-2 bg-white rounded-full"></div>
+                                    </div>
+                                </div>
+                            </div>`
                     }
                     <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-1">${producto.descripcion}</h3>
                     <p class="text-sm text-gray-600 dark:text-neutral-400 mb-3">📦 ${producto.categoria_nombre || 'Sin categoría'}</p>
@@ -643,18 +689,27 @@ function crearCardProducto(producto) {
 
                 <!-- Acciones -->
                 <div class="flex gap-2 pt-4 border-t border-gray-100 dark:border-neutral-700">
-                    <button onclick="abrirModalEditarProducto(${producto.idproducto})" class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 transition-all duration-200 dark:text-blue-400 dark:bg-blue-900/20 dark:border-blue-800">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
-                        Editar
-                    </button>
-                    <button class="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 hover:border-red-300 transition-all duration-200 dark:text-red-400 dark:bg-red-900/20 dark:border-red-800">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                        Eliminar
-                    </button>
+                    ${esEliminado ? `
+                        <div class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Eliminado el ${new Date(producto.deleted_at).toLocaleDateString()}
+                        </div>
+                    ` : `
+                        <button onclick="abrirModalEditarProducto(${producto.idproducto})" class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 transition-all duration-200 dark:text-blue-400 dark:bg-blue-900/20 dark:border-blue-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            Editar
+                        </button>
+                        <button onclick="eliminarProducto(${producto.idproducto}, '${producto.descripcion.replace(/'/g, "\\'")}' )" class="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 hover:border-red-300 transition-all duration-200 dark:text-red-400 dark:bg-red-900/20 dark:border-red-800">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            Eliminar
+                        </button>
+                    `}
                 </div>
             </div>
         </div>
@@ -681,9 +736,10 @@ function mostrarMensajeError(mensaje) {
 }
 
 /**
- * Carga de datos inicial de productos
+ * Carga de datos de productos con filtros opcionales
+ * @param {Object} filtros - Objeto con los filtros aplicar
  */
-async function cargarDatosProductos() {
+async function cargarDatosProductos(filtros = {}) {
     const loadingElement = document.getElementById('productos-loading');
     const gridElement = document.getElementById('productos-grid');
 
@@ -692,13 +748,24 @@ async function cargarDatosProductos() {
         if (loadingElement) loadingElement.classList.remove('hidden');
         if (gridElement) gridElement.classList.add('hidden');
 
+        // Construir parámetros de búsqueda
+        const params = new URLSearchParams({
+            action: 'obtenerProductos',
+            tenant_id: window.TENANT_ID || 1
+        });
+
+        // Agregar filtros si existen
+        if (filtros.categoria) params.append('categoria', filtros.categoria);
+        if (filtros.estado !== undefined && filtros.estado !== '') params.append('estado', filtros.estado);
+        if (filtros.busqueda) params.append('busqueda', filtros.busqueda);
+
         // Obtener productos del servidor
         const response = await fetch('ajax/productos.ajax.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: `action=obtenerProductos&tenant_id=${window.TENANT_ID || 1}`
+            body: params.toString()
         });
 
         if (!response.ok) {
@@ -710,8 +777,10 @@ async function cargarDatosProductos() {
         if (data.success && data.productos) {
             // Limpiar grid y cargar productos reales
             limpiarYCargarProductos(data.productos);
+            actualizarContadorProductos(data.productos);
         } else {
             mostrarMensajeError('No se pudieron cargar los productos');
+            actualizarContadorProductos([]);
         }
 
     } catch (error) {
@@ -2813,6 +2882,277 @@ function inicializarDropzoneImagenEdicion() {
             const event = new Event('change', { bubbles: true });
             imageInput.dispatchEvent(event);
         }
+    });
+}
+
+/**
+ * Carga las categorías en el filtro
+ */
+async function cargarCategoriasFiltro() {
+    const selectFiltroCategoria = document.getElementById('filtro-categoria');
+
+    if (!selectFiltroCategoria) return;
+
+    try {
+        const response = await fetch('ajax/productos.ajax.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `action=obtenerCategorias&tenant_id=${window.TENANT_ID || 1}`
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const responseText = await response.text();
+        if (!responseText.trim()) {
+            throw new Error('Respuesta vacía del servidor');
+        }
+
+        const data = JSON.parse(responseText);
+
+        if (data.success && data.categorias) {
+            // Limpiar opciones existentes pero mantener "Todas las categorías"
+            const primerOption = selectFiltroCategoria.querySelector('option[value=""]');
+            selectFiltroCategoria.innerHTML = '';
+            if (primerOption) {
+                selectFiltroCategoria.appendChild(primerOption);
+            } else {
+                // Crear opción "Todas las categorías" si no existe
+                const optionTodas = document.createElement('option');
+                optionTodas.value = '';
+                optionTodas.textContent = '🏷️ Todas las categorías';
+                selectFiltroCategoria.appendChild(optionTodas);
+            }
+
+            // Agregar categorías
+            data.categorias.forEach(categoria => {
+                const option = document.createElement('option');
+                option.value = categoria.idcategoria;
+                option.textContent = `${categoria.icono || '📁'} ${categoria.nombre}`;
+                selectFiltroCategoria.appendChild(option);
+            });
+        }
+
+    } catch (error) {
+        console.error('Error al cargar categorías para filtro:', error);
+    }
+}
+
+/**
+ * Aplica los filtros seleccionados y recarga los productos
+ */
+function aplicarFiltros() {
+    const filtros = {
+        categoria: document.getElementById('filtro-categoria')?.value || '',
+        estado: document.getElementById('filtro-estado')?.value || '',
+        busqueda: document.getElementById('buscar-producto')?.value || ''
+    };
+
+    cargarDatosProductos(filtros);
+}
+
+/**
+ * Limpia todos los filtros y recarga los productos
+ */
+function limpiarFiltros() {
+    // Limpiar filtro de categoría
+    const filtroCategoria = document.getElementById('filtro-categoria');
+    if (filtroCategoria) {
+        filtroCategoria.value = '';
+    }
+
+    // Establecer filtro de estado a "Solo activos" (valor por defecto)
+    const filtroEstado = document.getElementById('filtro-estado');
+    if (filtroEstado) {
+        filtroEstado.value = '1';
+    }
+
+    // Limpiar búsqueda
+    const buscarProducto = document.getElementById('buscar-producto');
+    if (buscarProducto) {
+        buscarProducto.value = '';
+    }
+
+    // Recargar productos con filtros limpios
+    aplicarFiltros();
+}
+
+/**
+ * Inicializa los event listeners para los filtros
+ */
+function inicializarFiltros() {
+    // Filtro por categoría
+    const filtroCategoria = document.getElementById('filtro-categoria');
+    if (filtroCategoria) {
+        filtroCategoria.addEventListener('change', aplicarFiltros);
+    }
+
+    // Filtro por estado
+    const filtroEstado = document.getElementById('filtro-estado');
+    if (filtroEstado) {
+        filtroEstado.addEventListener('change', aplicarFiltros);
+    }
+
+    // Búsqueda de texto con debounce
+    const buscarProducto = document.getElementById('buscar-producto');
+    if (buscarProducto) {
+        let timeoutId;
+        buscarProducto.addEventListener('input', function() {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                aplicarFiltros();
+            }, 500); // Esperar 500ms después de que el usuario deje de escribir
+        });
+    }
+}
+
+/**
+ * Actualiza el contador de productos mostrados
+ * @param {Array} productos - Array de productos
+ */
+function actualizarContadorProductos(productos) {
+    // Esta función se puede llamar después de cargar productos para mostrar estadísticas
+    const totalProductos = productos.length;
+    const productosActivos = productos.filter(p => p.estado == 1 && (!p.deleted_at)).length;
+    const productosInactivos = productos.filter(p => p.estado == 0 && (!p.deleted_at)).length;
+    const productosEliminados = productos.filter(p => p.deleted_at !== null && p.deleted_at !== undefined).length;
+
+    // Log para debugging (se puede remover en producción)
+    console.log(`Total productos: ${totalProductos}, Activos: ${productosActivos}, Inactivos: ${productosInactivos}, Eliminados: ${productosEliminados}`);
+
+    // Aquí se puede actualizar algún elemento del DOM si se desea mostrar estadísticas
+    // Por ejemplo, en el header o en algún badge
+}
+
+/**
+ * Elimina un producto (soft delete)
+ * @param {number} idProducto - ID del producto a eliminar
+ * @param {string} nombreProducto - Nombre del producto para confirmación
+ */
+async function eliminarProducto(idProducto, nombreProducto) {
+    try {
+        // Mostrar confirmación
+        const confirmacion = await mostrarConfirmacionEliminacion(nombreProducto);
+        if (!confirmacion) {
+            return;
+        }
+
+        // Enviar petición de eliminación
+        const response = await fetch('ajax/productos.ajax.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `action=eliminarProducto&id=${idProducto}`
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            showNotification('✅ Producto eliminado exitosamente', 'success');
+
+            // Recargar la lista de productos
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showNotification(`❌ ${data.message}`, 'error');
+        }
+
+    } catch (error) {
+        console.error('Error al eliminar producto:', error);
+        showNotification('❌ Error de conexión al eliminar el producto', 'error');
+    }
+}
+
+/**
+ * Muestra modal de confirmación para eliminar producto
+ * @param {string} nombreProducto - Nombre del producto
+ * @returns {Promise<boolean>} - True si el usuario confirma
+ */
+function mostrarConfirmacionEliminacion(nombreProducto) {
+    return new Promise((resolve) => {
+        // Crear modal de confirmación
+        const modalHtml = `
+            <div id="modal-confirmar-eliminacion" class="hs-overlay fixed top-0 start-0 z-[60] w-full h-full bg-black bg-opacity-50 flex items-center justify-center">
+                <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-lg max-w-md w-full mx-4">
+                    <div class="p-6">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="flex-shrink-0">
+                                <div class="flex items-center justify-center w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full">
+                                    <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                    Confirmar eliminación
+                                </h3>
+                                <p class="text-sm text-gray-500 dark:text-neutral-400">
+                                    Esta acción no se puede deshacer
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <p class="text-gray-700 dark:text-neutral-300">
+                                ¿Estás seguro de que deseas eliminar el producto <strong>"${nombreProducto}"</strong>?
+                            </p>
+                            <p class="text-sm text-gray-500 dark:text-neutral-400 mt-2">
+                                El producto será marcado como eliminado y no aparecerá en las listas, pero se conservará para fines de auditoría.
+                            </p>
+                        </div>
+
+                        <div class="flex gap-3 justify-end">
+                            <button type="button" id="btn-cancelar-eliminacion" class="py-2 px-4 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-600">
+                                Cancelar
+                            </button>
+                            <button type="button" id="btn-confirmar-eliminacion" class="py-2 px-4 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                Eliminar producto
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Agregar modal al DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        const modal = document.getElementById('modal-confirmar-eliminacion');
+        const btnCancelar = document.getElementById('btn-cancelar-eliminacion');
+        const btnConfirmar = document.getElementById('btn-confirmar-eliminacion');
+
+        // Mostrar modal
+        modal.style.display = 'flex';
+
+        // Manejar eventos
+        const cerrarModal = (resultado) => {
+            modal.remove();
+            resolve(resultado);
+        };
+
+        btnCancelar.addEventListener('click', () => cerrarModal(false));
+        btnConfirmar.addEventListener('click', () => cerrarModal(true));
+
+        // Cerrar con ESC o click fuera
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) cerrarModal(false);
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                cerrarModal(false);
+            }
+        });
     });
 }
 

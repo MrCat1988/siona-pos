@@ -76,6 +76,7 @@
                                         <option value="1" selected>✅ Solo activos</option>
                                         <option value="0">❌ Solo inactivos</option>
                                         <option value="">🔄 Todos los estados</option>
+                                        <option value="eliminados">🗑️ Eliminados</option>
                                     </select>
                                 </div>
                             </div>

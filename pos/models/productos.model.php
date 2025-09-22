@@ -225,7 +225,6 @@ class ModeloProductos {
                 FROM producto p
                 INNER JOIN categoria c ON p.categoria_idcategoria = c.idcategoria
                 WHERE c.tenant_id = :tenant_id
-                AND p.deleted_at IS NULL
             ";
 
             $params = array(":tenant_id" => $tenantId);
@@ -236,9 +235,17 @@ class ModeloProductos {
                 $params[":categoria"] = $filtros["categoria"];
             }
 
+            // Manejo especial para el filtro de estado incluyendo productos eliminados
             if (isset($filtros["estado"]) && $filtros["estado"] !== "") {
-                $sql .= " AND p.estado = :estado";
-                $params[":estado"] = $filtros["estado"];
+                if ($filtros["estado"] === "eliminados") {
+                    $sql .= " AND p.deleted_at IS NOT NULL";
+                } else {
+                    $sql .= " AND p.estado = :estado AND p.deleted_at IS NULL";
+                    $params[":estado"] = $filtros["estado"];
+                }
+            } else {
+                // Si no hay filtro de estado específico, mostrar solo productos no eliminados
+                $sql .= " AND p.deleted_at IS NULL";
             }
 
             if (!empty($filtros["busqueda"])) {
