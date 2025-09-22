@@ -1134,31 +1134,9 @@ $(document).ready(function() {
         // Obtener el nombre de la sucursal del botón
         const sucursalNombre = $(this).closest('.bg-white').find('h3').text().trim();
 
-        // Confirmar eliminación con SweetAlert
-        Swal.fire({
-            title: '¿Eliminar sucursal?',
-            html: `
-                <div class="text-left">
-                    <p class="mb-3"><strong>Sucursal:</strong> ${sucursalNombre}</p>
-                    <p class="text-sm text-gray-600">Esta acción:</p>
-                    <ul class="text-sm text-gray-600 mt-2 space-y-1">
-                        <li>• Verificará si la sucursal tiene usuarios asociados</li>
-                        <li>• Si tiene usuarios, será <strong>desactivada</strong> para auditoría</li>
-                        <li>• Si no tiene usuarios, será <strong>eliminada</strong> permanentemente</li>
-                    </ul>
-                </div>
-            `,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Sí, proceder',
-            cancelButtonText: 'Cancelar',
-            backdrop: true,
-            allowOutsideClick: false,
-            width: '500px'
-        }).then((result) => {
-            if (result.isConfirmed) {
+        // Mostrar modal de confirmación personalizado
+        mostrarConfirmacionEliminacionSucursal(sucursalNombre).then((confirmado) => {
+            if (confirmado) {
                 eliminarSucursal(sucursalId);
             }
         });
@@ -1223,6 +1201,95 @@ $(document).ready(function() {
             window.SucursalesManager.cargarSucursales();
         }
     });
+
+    /**
+     * Muestra modal de confirmación para eliminar sucursal
+     * @param {string} nombreSucursal - Nombre de la sucursal
+     * @returns {Promise<boolean>} - True si el usuario confirma
+     */
+    function mostrarConfirmacionEliminacionSucursal(nombreSucursal) {
+        return new Promise((resolve) => {
+            // Crear modal de confirmación
+            const modalHtml = `
+                <div id="modal-confirmar-eliminacion-sucursal" class="hs-overlay fixed top-0 start-0 z-[60] w-full h-full bg-black bg-opacity-50 flex items-center justify-center">
+                    <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-lg max-w-md w-full mx-4">
+                        <div class="p-6">
+                            <div class="flex items-center gap-4 mb-4">
+                                <div class="flex-shrink-0">
+                                    <div class="flex items-center justify-center w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full">
+                                        <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                        Confirmar eliminación
+                                    </h3>
+                                    <p class="text-sm text-gray-500 dark:text-neutral-400">
+                                        Esta acción no se puede deshacer
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mb-6">
+                                <p class="text-gray-700 dark:text-neutral-300">
+                                    ¿Estás seguro de que deseas eliminar la sucursal <strong>"${nombreSucursal}"</strong>?
+                                </p>
+                                <div class="text-sm text-gray-500 dark:text-neutral-400 mt-3 space-y-1">
+                                    <p>Esta acción:</p>
+                                    <ul class="list-disc list-inside space-y-1 ml-2">
+                                        <li>Verificará si la sucursal tiene usuarios asociados</li>
+                                        <li>Si tiene usuarios, será <strong>desactivada</strong> para auditoría</li>
+                                        <li>Si no tiene usuarios, será <strong>eliminada</strong> permanentemente</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3 justify-end">
+                                <button type="button" id="btn-cancelar-eliminacion-sucursal" class="py-2 px-4 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-600">
+                                    Cancelar
+                                </button>
+                                <button type="button" id="btn-confirmar-eliminacion-sucursal" class="py-2 px-4 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                    Eliminar sucursal
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Agregar modal al DOM
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            const modal = document.getElementById('modal-confirmar-eliminacion-sucursal');
+            const btnCancelar = document.getElementById('btn-cancelar-eliminacion-sucursal');
+            const btnConfirmar = document.getElementById('btn-confirmar-eliminacion-sucursal');
+
+            // Mostrar modal
+            modal.style.display = 'flex';
+
+            // Manejar eventos
+            const cerrarModal = (resultado) => {
+                modal.remove();
+                resolve(resultado);
+            };
+
+            btnCancelar.addEventListener('click', () => cerrarModal(false));
+            btnConfirmar.addEventListener('click', () => cerrarModal(true));
+
+            // Cerrar con ESC o click fuera
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) cerrarModal(false);
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    cerrarModal(false);
+                }
+            });
+        });
+    }
 
     // Función para eliminar sucursal
     function eliminarSucursal(sucursalId) {

@@ -1502,20 +1502,12 @@ $(document).ready(function() {
         const userId = $(this).data('id');
         console.log('Solicitando eliminación para usuario ID:', userId);
 
-        // Confirmar eliminación con SweetAlert
-        Swal.fire({
-            title: '¿Eliminar usuario?',
-            text: 'Esta acción verificará si el usuario puede ser eliminado o necesita ser desactivado para fines de auditoría.',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Sí, proceder',
-            cancelButtonText: 'Cancelar',
-            backdrop: true,
-            allowOutsideClick: false
-        }).then((result) => {
-            if (result.isConfirmed) {
+        // Obtener el nombre del usuario del card
+        const nombreUsuario = $(this).closest('.bg-white').find('h3').text().trim();
+
+        // Mostrar modal de confirmación personalizado
+        mostrarConfirmacionEliminacionUsuario(nombreUsuario).then((confirmado) => {
+            if (confirmado) {
                 eliminarUsuario(userId);
             }
         });
@@ -2161,6 +2153,90 @@ $(document).ready(function() {
             window.UsuariosManager.cargarUsuarios();
         }
     });
+
+    /**
+     * Muestra modal de confirmación para eliminar usuario
+     * @param {string} nombreUsuario - Nombre del usuario
+     * @returns {Promise<boolean>} - True si el usuario confirma
+     */
+    function mostrarConfirmacionEliminacionUsuario(nombreUsuario) {
+        return new Promise((resolve) => {
+            // Crear modal de confirmación
+            const modalHtml = `
+                <div id="modal-confirmar-eliminacion-usuario" class="hs-overlay fixed top-0 start-0 z-[60] w-full h-full bg-black bg-opacity-50 flex items-center justify-center">
+                    <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-lg max-w-md w-full mx-4">
+                        <div class="p-6">
+                            <div class="flex items-center gap-4 mb-4">
+                                <div class="flex-shrink-0">
+                                    <div class="flex items-center justify-center w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full">
+                                        <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                        Confirmar eliminación
+                                    </h3>
+                                    <p class="text-sm text-gray-500 dark:text-neutral-400">
+                                        Esta acción no se puede deshacer
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mb-6">
+                                <p class="text-gray-700 dark:text-neutral-300">
+                                    ¿Estás seguro de que deseas eliminar el usuario <strong>"${nombreUsuario}"</strong>?
+                                </p>
+                                <p class="text-sm text-gray-500 dark:text-neutral-400 mt-2">
+                                    El sistema verificará si el usuario puede ser eliminado o necesita ser desactivado para fines de auditoría.
+                                </p>
+                            </div>
+
+                            <div class="flex gap-3 justify-end">
+                                <button type="button" id="btn-cancelar-eliminacion-usuario" class="py-2 px-4 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-600">
+                                    Cancelar
+                                </button>
+                                <button type="button" id="btn-confirmar-eliminacion-usuario" class="py-2 px-4 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                    Eliminar usuario
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Agregar modal al DOM
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            const modal = document.getElementById('modal-confirmar-eliminacion-usuario');
+            const btnCancelar = document.getElementById('btn-cancelar-eliminacion-usuario');
+            const btnConfirmar = document.getElementById('btn-confirmar-eliminacion-usuario');
+
+            // Mostrar modal
+            modal.style.display = 'flex';
+
+            // Manejar eventos
+            const cerrarModal = (resultado) => {
+                modal.remove();
+                resolve(resultado);
+            };
+
+            btnCancelar.addEventListener('click', () => cerrarModal(false));
+            btnConfirmar.addEventListener('click', () => cerrarModal(true));
+
+            // Cerrar con ESC o click fuera
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) cerrarModal(false);
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    cerrarModal(false);
+                }
+            });
+        });
+    }
 
     // Función para eliminar usuario
     function eliminarUsuario(userId) {

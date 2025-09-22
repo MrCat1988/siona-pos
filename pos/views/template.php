@@ -55,6 +55,7 @@
                 $_GET["route"] == 'sucursales' ||
                 $_GET["route"] == 'categorias' ||
                 $_GET["route"] == 'productos' ||
+                $_GET["route"] == 'producto-sucursal' ||
                 $_GET["route"] == 'content'
 
 
