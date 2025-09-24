@@ -1,5 +1,7 @@
 <?php
 
+session_start();
+
 require_once "../models/producto-sucursal.model.php";
 require_once "../controllers/producto-sucursal.controller.php";
 
@@ -10,6 +12,7 @@ class AjaxProductoSucursal {
     =============================================*/
     public function obtenerProductosSucursal() {
 
+
         if (!isset($_SESSION["tenant_id"])) {
             echo json_encode(array(
                 "success" => false,
@@ -19,6 +22,9 @@ class AjaxProductoSucursal {
         }
 
         $filtros = array();
+
+        // DEBUG TEMPORAL - Ver filtros recibidos
+        error_log("AJAX filtros recibidos POST: " . json_encode($_POST));
 
         // Aplicar filtros desde el frontend
         if (!empty($_POST["sucursal"])) {
@@ -37,7 +43,17 @@ class AjaxProductoSucursal {
             $filtros["estado"] = $_POST["estado"];
         }
 
+        // Parámetros de paginación
+        if (isset($_POST["limite"]) && is_numeric($_POST["limite"])) {
+            $filtros["limite"] = intval($_POST["limite"]);
+        }
+
+        if (isset($_POST["offset"]) && is_numeric($_POST["offset"])) {
+            $filtros["offset"] = intval($_POST["offset"]);
+        }
+
         $respuesta = ControladorProductoSucursal::ctrObtenerProductosSucursal($_SESSION["tenant_id"], $filtros);
+
 
         echo json_encode($respuesta);
     }
@@ -175,9 +191,12 @@ class AjaxProductoSucursal {
             return;
         }
 
+        $searchTerm = isset($_POST["search"]) ? trim($_POST["search"]) : '';
+
         $respuesta = ControladorProductoSucursal::ctrObtenerProductosDisponibles(
             $_POST["sucursal_id"],
-            $_SESSION["tenant_id"]
+            $_SESSION["tenant_id"],
+            $searchTerm
         );
 
         echo json_encode($respuesta);

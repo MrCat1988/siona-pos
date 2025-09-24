@@ -1,778 +1,713 @@
-/*=============================================
-VARIABLES GLOBALES
-=============================================*/
-let productosData = [];
-let sucursalesData = [];
-let categoriasData = [];
-let filtrosActivos = {};
-let modoEdicion = false;
+// Encapsular en IIFE para evitar conflictos globales
+(function() {
+    'use strict';
 
-/*=============================================
-INICIALIZAR APLICACIÓN
-=============================================*/
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Inicializando módulo Productos por Sucursal');
+    // Variables locales del módulo
+    let productosSucursalData = [];
+    let sucursalesSucursal = [];
+    let categoriasSucursal = [];
+    let paginacionSucursal = {};
+    let vistaActualSucursal = localStorage.getItem('vistaProductosSucursal') || 'cards';
+    let paginaActualSucursal = 1;
+    let itemsPorPaginaSucursal = 12;
 
-    inicializarEventos();
-    cargarDatosIniciales();
-});
-
-/*=============================================
-INICIALIZAR EVENTOS
-=============================================*/
-function inicializarEventos() {
-    // Botones para abrir modal
-    document.getElementById('btn-agregar-producto-sucursal').addEventListener('click', abrirModalAgregar);
-    document.getElementById('btn-agregar-desde-vacio').addEventListener('click', abrirModalAgregar);
-
-    // Botones del modal
-    document.getElementById('btn-cancelar-modal').addEventListener('click', cerrarModal);
-    document.getElementById('btn-guardar-producto-sucursal').addEventListener('click', guardarProductoSucursal);
-
-    // Eventos de filtros con debounce
-    document.getElementById('filtro-sucursal').addEventListener('change', aplicarFiltros);
-    document.getElementById('filtro-categoria').addEventListener('change', aplicarFiltros);
-    document.getElementById('filtro-estado').addEventListener('change', aplicarFiltros);
-
-    // Búsqueda con debounce
-    let timeoutBusqueda;
-    document.getElementById('filtro-busqueda').addEventListener('input', function() {
-        clearTimeout(timeoutBusqueda);
-        timeoutBusqueda = setTimeout(aplicarFiltros, 500);
+    // Inicialización
+    document.addEventListener('DOMContentLoaded', function() {
+        inicializarModuloProductoSucursal();
     });
 
-    // Cambio en sucursal del modal - cargar productos disponibles
-    document.getElementById('sucursal_idsucursal').addEventListener('change', cargarProductosDisponibles);
-
-    // Cambio en producto - mostrar precio base
-    document.getElementById('productos_idproducto').addEventListener('change', mostrarPrecioBase);
-}
-
-/*=============================================
-CARGAR DATOS INICIALES
-=============================================*/
-async function cargarDatosIniciales() {
-    try {
-        console.log('📦 Cargando datos iniciales...');
-
-        // Cargar datos en paralelo
-        await Promise.all([
-            cargarSucursales(),
-            cargarCategorias(),
-            cargarProductosSucursal()
-        ]);
-
-        console.log('✅ Datos iniciales cargados correctamente');
-
-    } catch (error) {
-        console.error('❌ Error al cargar datos iniciales:', error);
-        showNotification('Error al cargar los datos iniciales', 'error');
+    function inicializarModuloProductoSucursal() {
+        configurarEventosSucursal();
+        cargarSucursalesSucursal();
+        cargarCategoriasSucursal();
+        configurarVistaSucursal();
+        cargarProductosSucursal();
     }
-}
 
-/*=============================================
-CARGAR SUCURSALES
-=============================================*/
-async function cargarSucursales() {
-    try {
-        const response = await fetch('ajax/producto-sucursal.ajax.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'accion=obtener_sucursales_disponibles'
-        });
+    // Configurar eventos
+    function configurarEventosSucursal() {
+        // Botones de vista
+        const btnVistaCards = document.getElementById('btn-vista-cards');
+        const btnVistaTabla = document.getElementById('btn-vista-tabla');
 
-        const data = await response.json();
-
-        if (data.success) {
-            sucursalesData = data.sucursales;
-            llenarSelectSucursales();
-        } else {
-            throw new Error(data.message || 'Error al cargar sucursales');
+        if (btnVistaCards) {
+            btnVistaCards.addEventListener('click', () => cambiarVista('cards'));
+        }
+        if (btnVistaTabla) {
+            btnVistaTabla.addEventListener('click', () => cambiarVista('tabla'));
         }
 
-    } catch (error) {
-        console.error('Error al cargar sucursales:', error);
-        showNotification('Error al cargar sucursales', 'error');
-    }
-}
+        // Filtros
+        const filtroSucursal = document.getElementById('filtro-sucursal');
+        const filtroCategoria = document.getElementById('filtro-categoria');
+        const filtroEstado = document.getElementById('filtro-estado');
+        const filtroBusqueda = document.getElementById('filtro-busqueda');
 
-/*=============================================
-CARGAR CATEGORÍAS
-=============================================*/
-async function cargarCategorias() {
-    try {
-        const response = await fetch('ajax/producto-sucursal.ajax.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'accion=obtener_categorias_para_filtros'
+        // Botón "Ver todos"
+        const btnVerTodos = document.getElementById('btn-ver-todos');
+
+        if (filtroSucursal) filtroSucursal.addEventListener('change', () => {
+            paginaActualSucursal = 1; // Reset paginación al cambiar filtros
+            cargarProductosSucursal();
         });
-
-        const data = await response.json();
-
-        if (data.success) {
-            categoriasData = data.categorias;
-            llenarSelectCategorias();
-        } else {
-            throw new Error(data.message || 'Error al cargar categorías');
+        if (filtroCategoria) filtroCategoria.addEventListener('change', () => {
+            paginaActualSucursal = 1;
+            cargarProductosSucursal();
+        });
+        if (filtroEstado) filtroEstado.addEventListener('change', () => {
+            paginaActualSucursal = 1;
+            cargarProductosSucursal();
+        });
+        if (filtroBusqueda) {
+            let timeoutId;
+            filtroBusqueda.addEventListener('input', () => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    paginaActualSucursal = 1; // Reset paginación al buscar
+                    cargarProductosSucursal();
+                }, 300);
+            });
         }
 
-    } catch (error) {
-        console.error('Error al cargar categorías:', error);
-        showNotification('Error al cargar categorías', 'error');
-    }
-}
-
-/*=============================================
-LLENAR SELECT DE SUCURSALES
-=============================================*/
-function llenarSelectSucursales() {
-    // Select del filtro
-    const filtroSucursal = document.getElementById('filtro-sucursal');
-    filtroSucursal.innerHTML = '<option value="">🏪 Todas las sucursales</option>';
-
-    // Select del modal
-    const modalSucursal = document.getElementById('sucursal_idsucursal');
-    modalSucursal.innerHTML = '<option value="">Seleccionar sucursal...</option>';
-
-    sucursalesData.forEach(sucursal => {
-        const option1 = new Option(`🏪 ${sucursal.nombre}`, sucursal.idsucursal);
-        const option2 = new Option(sucursal.nombre, sucursal.idsucursal);
-
-        filtroSucursal.appendChild(option1);
-        modalSucursal.appendChild(option2);
-    });
-}
-
-/*=============================================
-LLENAR SELECT DE CATEGORÍAS
-=============================================*/
-function llenarSelectCategorias() {
-    const filtroCategorias = document.getElementById('filtro-categoria');
-    filtroCategorias.innerHTML = '<option value="">🏷️ Todas las categorías</option>';
-
-    categoriasData.forEach(categoria => {
-        const option = new Option(`🏷️ ${categoria.nombre}`, categoria.idcategoria);
-        filtroCategorias.appendChild(option);
-    });
-}
-
-/*=============================================
-CARGAR PRODUCTOS POR SUCURSAL
-=============================================*/
-async function cargarProductosSucursal() {
-    try {
-        mostrarLoading(true);
-
-        // Construir parámetros de filtros
-        const params = new URLSearchParams();
-        params.append('accion', 'obtener_productos_sucursal');
-
-        Object.keys(filtrosActivos).forEach(key => {
-            if (filtrosActivos[key] !== '') {
-                params.append(key, filtrosActivos[key]);
-            }
-        });
-
-        const response = await fetch('ajax/producto-sucursal.ajax.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: params.toString()
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            productosData = data.productos_sucursal;
-            mostrarProductos();
-        } else {
-            throw new Error(data.message || 'Error al cargar productos');
+        // Botón "Ver todos" - resetear filtros
+        if (btnVerTodos) {
+            btnVerTodos.addEventListener('click', () => {
+                resetearFiltros();
+            });
         }
 
-    } catch (error) {
-        console.error('Error al cargar productos por sucursal:', error);
-        showNotification('Error al cargar los productos', 'error');
-        mostrarEstadoVacio();
-    } finally {
-        mostrarLoading(false);
-    }
-}
+        // Botón agregar
+        const btnAgregar = document.getElementById('btn-agregar-producto-sucursal');
+        if (btnAgregar) {
+            btnAgregar.addEventListener('click', function() {
+                abrirModalProductoSucursal();
+            });
+        }
 
-/*=============================================
-MOSTRAR/OCULTAR LOADING
-=============================================*/
-function mostrarLoading(mostrar) {
-    const loading = document.getElementById('loading-productos-sucursal');
-    const contenedor = document.getElementById('contenedor-productos-sucursal');
-    const estadoVacio = document.getElementById('estado-vacio');
+        // Controles de paginación
+        const btnAnterior = document.getElementById('btn-pag-anterior-sucursal');
+        const btnSiguiente = document.getElementById('btn-pag-siguiente-sucursal');
+        const selectItemsPorPagina = document.getElementById('items-por-pagina-sucursal');
 
-    if (mostrar) {
-        loading.classList.remove('hidden');
-        contenedor.classList.add('hidden');
-        estadoVacio.classList.add('hidden');
-    } else {
-        loading.classList.add('hidden');
-    }
-}
-
-/*=============================================
-MOSTRAR PRODUCTOS
-=============================================*/
-function mostrarProductos() {
-    const contenedor = document.getElementById('contenedor-productos-sucursal');
-    const estadoVacio = document.getElementById('estado-vacio');
-
-    if (productosData.length === 0) {
-        mostrarEstadoVacio();
-        return;
-    }
-
-    estadoVacio.classList.add('hidden');
-    contenedor.classList.remove('hidden');
-
-    // Crear grid de productos similar al módulo productos
-    let html = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">`;
-
-    productosData.forEach(producto => {
-        html += crearCardProducto(producto);
-    });
-
-    html += '</div>';
-
-    contenedor.innerHTML = html;
-}
-
-/*=============================================
-CREAR CARD DE PRODUCTO
-=============================================*/
-function crearCardProducto(producto) {
-    const estado = parseInt(producto.estado);
-    const estadoClass = estado === 1 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-    const estadoTexto = estado === 1 ? '✅ Activo' : '❌ Inactivo';
-
-    // Verificar stock bajo
-    const stockBajo = producto.stock_sucursal <= producto.stock_minimo_sucursal && producto.stock_minimo_sucursal > 0;
-    const stockClass = stockBajo ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white';
-
-    // Generar gradiente de colores para el header
-    const gradientes = [
-        'from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20',
-        'from-emerald-50 via-green-50 to-teal-50 dark:from-emerald-900/20 dark:via-green-900/20 dark:to-teal-900/20',
-        'from-rose-50 via-pink-50 to-red-50 dark:from-rose-900/20 dark:via-pink-900/20 dark:to-red-900/20',
-        'from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/20 dark:via-yellow-900/20 dark:to-orange-900/20'
-    ];
-    const gradiente = gradientes[Math.abs(hashCode(producto.codigo)) % gradientes.length];
-
-    return `
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 dark:bg-neutral-800 dark:border-neutral-700 overflow-hidden group hover:-translate-y-2">
-            <!-- Header con información del producto -->
-            <div class="relative bg-gradient-to-br ${gradiente} p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${estadoClass}">
-                        ${estadoTexto}
-                    </span>
-                    <div class="text-right">
-                        <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
-                            🏪 ${producto.sucursal_nombre}
-                        </span>
-                    </div>
-                </div>
-
-                <div class="text-center">
-                    ${producto.imagen && producto.imagen.trim() !== '' ?
-                        `<div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-white/50 dark:bg-black/20 flex items-center justify-center shadow-lg overflow-hidden">
-                            <img src="${producto.imagen}" alt="${producto.descripcion}" class="w-full h-full object-cover rounded-xl">
-                        </div>` :
-                        `<div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg">
-                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                            </svg>
-                        </div>`
-                    }
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1 line-clamp-1">${producto.descripcion}</h3>
-                    <p class="text-sm text-gray-600 dark:text-neutral-400 mb-3">🏷️ ${producto.categoria_nombre}</p>
-                </div>
-            </div>
-
-            <!-- Información principal -->
-            <div class="p-6 space-y-4">
-                <!-- Códigos -->
-                <div class="bg-gray-50 dark:bg-neutral-800/50 rounded-xl p-4">
-                    <div class="grid grid-cols-1 gap-2 text-sm">
-                        <div>
-                            <p class="text-xs font-medium text-gray-500 dark:text-neutral-400 mb-1">Código del Producto</p>
-                            <p class="font-semibold text-gray-900 dark:text-white">${producto.codigo}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Precios destacados -->
-                <div class="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1">Precio Base</p>
-                            <p class="text-sm font-semibold text-gray-700 dark:text-neutral-300">$${parseFloat(producto.precio_base).toFixed(2)}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1">Precio Sucursal</p>
-                            <p class="text-lg font-bold text-emerald-600 dark:text-emerald-400">$${parseFloat(producto.precio_sucursal).toFixed(2)}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Stock y límites -->
-                <div class="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
-                    <div class="grid grid-cols-3 gap-3 text-center">
-                        <div>
-                            <p class="text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1">Stock</p>
-                            <p class="text-lg font-bold ${stockClass}">
-                                ${producto.stock_sucursal}
-                                ${stockBajo ? ' ⚠️' : ''}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1">Mínimo</p>
-                            <p class="text-sm font-semibold text-gray-700 dark:text-neutral-300">${producto.stock_minimo_sucursal}</p>
-                        </div>
-                        <div>
-                            <p class="text-xs font-medium text-gray-600 dark:text-neutral-400 mb-1">Máximo</p>
-                            <p class="text-sm font-semibold text-gray-700 dark:text-neutral-300">${producto.stock_maximo_sucursal}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Botones de acción -->
-                <div class="flex gap-3 pt-2">
-                    <button onclick="editarProductoSucursal(${producto.idproducto_sucursal})"
-                            class="flex-1 py-2.5 px-4 text-sm font-medium text-blue-600 hover:text-white bg-white hover:bg-blue-600 border border-blue-300 rounded-lg transition-all duration-200 hover:shadow-md dark:bg-neutral-700 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-600 dark:hover:text-white">
-                        ✏️ Editar
-                    </button>
-
-                    <button onclick="eliminarProductoSucursal(${producto.idproducto_sucursal}, '${producto.codigo} - ${producto.sucursal_nombre}')"
-                            class="flex-1 py-2.5 px-4 text-sm font-medium text-red-600 hover:text-white bg-white hover:bg-red-600 border border-red-300 rounded-lg transition-all duration-200 hover:shadow-md dark:bg-neutral-700 dark:border-red-500 dark:text-red-400 dark:hover:bg-red-600 dark:hover:text-white">
-                        🗑️ Eliminar
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-/*=============================================
-FUNCIÓN AUXILIAR PARA GENERAR HASH
-=============================================*/
-function hashCode(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return hash;
-}
-
-/*=============================================
-MOSTRAR ESTADO VACÍO
-=============================================*/
-function mostrarEstadoVacio() {
-    const contenedor = document.getElementById('contenedor-productos-sucursal');
-    const estadoVacio = document.getElementById('estado-vacio');
-
-    contenedor.classList.add('hidden');
-    estadoVacio.classList.remove('hidden');
-}
-
-/*=============================================
-APLICAR FILTROS
-=============================================*/
-function aplicarFiltros() {
-    console.log('🔍 Aplicando filtros...');
-
-    filtrosActivos = {
-        sucursal: document.getElementById('filtro-sucursal').value,
-        categoria: document.getElementById('filtro-categoria').value,
-        estado: document.getElementById('filtro-estado').value,
-        busqueda: document.getElementById('filtro-busqueda').value.trim()
-    };
-
-    console.log('Filtros activos:', filtrosActivos);
-    cargarProductosSucursal();
-}
-
-/*=============================================
-ABRIR MODAL AGREGAR
-=============================================*/
-function abrirModalAgregar() {
-    modoEdicion = false;
-
-    document.getElementById('modal-titulo').textContent = 'Asignar Producto a Sucursal';
-    document.getElementById('texto-boton-guardar').textContent = 'Asignar Producto';
-
-    // Limpiar formulario
-    document.getElementById('form-producto-sucursal').reset();
-    document.getElementById('idproducto_sucursal').value = '';
-
-    // Limpiar productos disponibles
-    const selectProductos = document.getElementById('productos_idproducto');
-    selectProductos.innerHTML = '<option value="">Primero selecciona una sucursal...</option>';
-
-    // Abrir modal
-    window.HSOverlay.open(document.getElementById('modal-producto-sucursal'));
-}
-
-/*=============================================
-CARGAR PRODUCTOS DISPONIBLES
-=============================================*/
-async function cargarProductosDisponibles() {
-    const sucursalId = document.getElementById('sucursal_idsucursal').value;
-    const selectProductos = document.getElementById('productos_idproducto');
-
-    if (!sucursalId) {
-        selectProductos.innerHTML = '<option value="">Primero selecciona una sucursal...</option>';
-        return;
+        if (btnAnterior) {
+            btnAnterior.addEventListener('click', () => {
+                if (paginaActualSucursal > 1) {
+                    paginaActualSucursal--;
+                    cargarProductosSucursal();
+                }
+            });
+        }
+        if (btnSiguiente) {
+            btnSiguiente.addEventListener('click', () => {
+                const totalPaginas = Math.ceil(paginacionSucursal.total / itemsPorPaginaSucursal);
+                if (paginaActualSucursal < totalPaginas) {
+                    paginaActualSucursal++;
+                    cargarProductosSucursal();
+                }
+            });
+        }
+        if (selectItemsPorPagina) {
+            selectItemsPorPagina.addEventListener('change', () => {
+                itemsPorPaginaSucursal = parseInt(selectItemsPorPagina.value);
+                paginaActualSucursal = 1; // Reset a primera página
+                cargarProductosSucursal();
+            });
+        }
     }
 
-    try {
-        selectProductos.innerHTML = '<option value="">Cargando productos...</option>';
-
-        const response = await fetch('ajax/producto-sucursal.ajax.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `accion=obtener_productos_disponibles&sucursal_id=${sucursalId}`
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            selectProductos.innerHTML = '<option value="">Seleccionar producto...</option>';
-
-            data.productos.forEach(producto => {
-                const option = new Option(
-                    `${producto.codigo} - ${producto.descripcion} ($${parseFloat(producto.precio_de_venta).toFixed(2)})`,
-                    producto.idproducto
-                );
-                option.dataset.precioBase = producto.precio_de_venta;
-                selectProductos.appendChild(option);
+    // Cargar sucursales
+    async function cargarSucursalesSucursal() {
+        try {
+            const response = await fetch('ajax/sucursales.ajax.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                credentials: 'same-origin',
+                body: 'accion=obtener_sucursales'
             });
 
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                sucursalesSucursal = data.data.sucursales || [];
+                llenarSelectSucursalesSucursal();
+            }
+        } catch (error) {
+            console.error('Error al cargar sucursales:', error);
+        }
+    }
+
+    // Cargar categorías
+    async function cargarCategoriasSucursal() {
+        try {
+            const response = await fetch('ajax/producto-sucursal.ajax.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                credentials: 'same-origin',
+                body: 'accion=obtener_categorias_para_filtros'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                categoriasSucursal = data.categorias;
+                llenarSelectCategoriasSucursal();
+            }
+        } catch (error) {
+            console.error('Error al cargar categorías:', error);
+        }
+    }
+
+    // Llenar select de sucursales
+    function llenarSelectSucursalesSucursal() {
+        const filtroSucursal = document.getElementById('filtro-sucursal');
+        const modalSucursal = document.getElementById('sucursal_idsucursal');
+
+        if (filtroSucursal) {
+            // Mantener la primera opción existente y agregar las demás
+            const primeraOpcion = filtroSucursal.querySelector('option');
+            filtroSucursal.innerHTML = '';
+            if (primeraOpcion) filtroSucursal.appendChild(primeraOpcion);
+
+            sucursalesSucursal.forEach(sucursal => {
+                const option = document.createElement('option');
+                option.value = sucursal.idsucursal;
+                option.textContent = sucursal.sri_nombre;
+                filtroSucursal.appendChild(option);
+            });
+        }
+
+        if (modalSucursal) {
+            modalSucursal.innerHTML = '<option value="">Seleccionar sucursal</option>';
+            sucursalesSucursal.forEach(sucursal => {
+                const option = document.createElement('option');
+                option.value = sucursal.idsucursal;
+                option.textContent = sucursal.sri_nombre;
+                modalSucursal.appendChild(option);
+            });
+        }
+    }
+
+    // Llenar select de categorías
+    function llenarSelectCategoriasSucursal() {
+        const filtroCategoria = document.getElementById('filtro-categoria');
+
+        if (filtroCategoria) {
+            // Mantener la primera opción existente y agregar las demás
+            const primeraOpcion = filtroCategoria.querySelector('option');
+            filtroCategoria.innerHTML = '';
+            if (primeraOpcion) filtroCategoria.appendChild(primeraOpcion);
+
+            categoriasSucursal.forEach(categoria => {
+                const option = document.createElement('option');
+                option.value = categoria.idcategoria;
+                option.textContent = categoria.nombre;
+                filtroCategoria.appendChild(option);
+            });
+        }
+    }
+
+    // Configurar vista inicial
+    function configurarVistaSucursal() {
+        const btnVistaCards = document.getElementById('btn-vista-cards');
+        const btnVistaTabla = document.getElementById('btn-vista-tabla');
+        const vistaCards = document.getElementById('vista-cards');
+        const vistaTabla = document.getElementById('vista-tabla');
+        const loading = document.getElementById('loading-productos-sucursal');
+
+        // Ocultar loading
+        if (loading) loading.classList.add('hidden');
+
+        // Configurar vista
+        if (vistaActualSucursal === 'tabla') {
+            if (vistaCards) vistaCards.classList.add('hidden');
+            if (vistaTabla) vistaTabla.classList.remove('hidden');
+
+            // Actualizar botones
+            if (btnVistaCards) {
+                btnVistaCards.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+                btnVistaCards.classList.add('text-gray-500', 'hover:text-gray-700');
+            }
+            if (btnVistaTabla) {
+                btnVistaTabla.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+                btnVistaTabla.classList.remove('text-gray-500', 'hover:text-gray-700');
+            }
         } else {
-            selectProductos.innerHTML = '<option value="">No hay productos disponibles</option>';
-        }
+            if (vistaCards) vistaCards.classList.remove('hidden');
+            if (vistaTabla) vistaTabla.classList.add('hidden');
 
-    } catch (error) {
-        console.error('Error al cargar productos disponibles:', error);
-        selectProductos.innerHTML = '<option value="">Error al cargar productos</option>';
-    }
-}
-
-/*=============================================
-MOSTRAR PRECIO BASE
-=============================================*/
-function mostrarPrecioBase() {
-    const selectProducto = document.getElementById('productos_idproducto');
-    const inputPrecio = document.getElementById('precio_sucursal');
-
-    if (selectProducto.selectedIndex > 0) {
-        const precioBase = selectProducto.options[selectProducto.selectedIndex].dataset.precioBase;
-        if (precioBase && inputPrecio.value === '') {
-            inputPrecio.value = parseFloat(precioBase).toFixed(5);
+            // Actualizar botones
+            if (btnVistaCards) {
+                btnVistaCards.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+                btnVistaCards.classList.remove('text-gray-500', 'hover:text-gray-700');
+            }
+            if (btnVistaTabla) {
+                btnVistaTabla.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+                btnVistaTabla.classList.add('text-gray-500', 'hover:text-gray-700');
+            }
         }
     }
-}
 
-/*=============================================
-GUARDAR PRODUCTO-SUCURSAL
-=============================================*/
-async function guardarProductoSucursal() {
-    try {
-        const form = document.getElementById('form-producto-sucursal');
-        const formData = new FormData(form);
+    // Cambiar vista
+    function cambiarVista(nuevaVista) {
+        vistaActualSucursal = nuevaVista;
+        localStorage.setItem('vistaProductosSucursal', vistaActualSucursal);
+        configurarVistaSucursal();
+        mostrarProductosSucursal();
+    }
 
-        // Agregar acción
-        const accion = modoEdicion ? 'actualizar_producto_sucursal' : 'crear_producto_sucursal';
-        formData.append('accion', accion);
+    // Resetear todos los filtros
+    function resetearFiltros() {
+        const filtroSucursal = document.getElementById('filtro-sucursal');
+        const filtroCategoria = document.getElementById('filtro-categoria');
+        const filtroEstado = document.getElementById('filtro-estado');
+        const filtroBusqueda = document.getElementById('filtro-busqueda');
 
-        // Deshabilitar botón
-        const btnGuardar = document.getElementById('btn-guardar-producto-sucursal');
-        const textoOriginal = btnGuardar.innerHTML;
-        btnGuardar.disabled = true;
-        btnGuardar.innerHTML = '⏳ Guardando...';
+        // Resetear todos los filtros a valores por defecto
+        if (filtroSucursal) filtroSucursal.value = '';
+        if (filtroCategoria) filtroCategoria.value = '';
+        if (filtroEstado) filtroEstado.value = ''; // Mostrar todos los estados
+        if (filtroBusqueda) filtroBusqueda.value = '';
+        paginaActualSucursal = 1; // Reset paginación
 
-        const response = await fetch('ajax/producto-sucursal.ajax.php', {
-            method: 'POST',
-            body: formData
-        });
+        // Recargar productos con filtros reseteados
+        cargarProductosSucursal();
+    }
 
-        const data = await response.json();
+    // Cargar productos con filtros
+    async function cargarProductosSucursal() {
+        // Mostrar indicador de carga
+        const loading = document.getElementById('loading-productos-sucursal');
+        if (loading) loading.classList.remove('hidden');
 
-        if (data.success) {
-            showNotification(data.message, 'success');
-            cerrarModal();
-            cargarProductosSucursal();
+        try {
+            const filtroSucursal = document.getElementById('filtro-sucursal')?.value || '';
+            const filtroCategoria = document.getElementById('filtro-categoria')?.value || '';
+            const filtroEstado = document.getElementById('filtro-estado')?.value || '';
+            const filtroBusqueda = document.getElementById('filtro-busqueda')?.value || '';
+
+
+            const formData = new FormData();
+            formData.append('accion', 'obtener_productos_sucursal');
+            formData.append('sucursal', filtroSucursal);
+            formData.append('categoria', filtroCategoria);
+            formData.append('estado', filtroEstado);
+            formData.append('busqueda', filtroBusqueda);
+            formData.append('limite', itemsPorPaginaSucursal.toString());
+            formData.append('offset', ((paginaActualSucursal - 1) * itemsPorPaginaSucursal).toString());
+
+            const response = await fetch('ajax/producto-sucursal.ajax.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: formData
+            });
+
+            const data = await response.json();
+
+
+            if (data.success) {
+                productosSucursalData = data.productos_sucursal || [];
+                paginacionSucursal = data.paginacion || {};
+
+                // Primero actualizar contador
+                actualizarContadorSucursal();
+                // Actualizar controles de paginación
+                actualizarPaginacionSucursal();
+
+                // Luego mostrar productos o estado vacío
+                if (productosSucursalData.length > 0) {
+                    ocultarEstadoVacio();
+                    configurarVistaSucursal(); // Asegurar que la vista esté visible
+                    mostrarProductosSucursal();
+                } else {
+                    mostrarEstadoVacio();
+                }
+            } else {
+                productosSucursalData = [];
+                mostrarEstadoVacio();
+            }
+        } catch (error) {
+            console.error('Error al cargar productos:', error);
+            productosSucursalData = [];
+            mostrarEstadoVacio();
+        } finally {
+            // Ocultar indicador de carga
+            if (loading) loading.classList.add('hidden');
+        }
+    }
+
+    // Mostrar productos según la vista
+    function mostrarProductosSucursal() {
+        if (vistaActualSucursal === 'cards') {
+            mostrarVistaCardsSucursal();
         } else {
-            showNotification(data.message, 'error');
+            mostrarVistaTablaSucursal();
+        }
+    }
+
+    // Vista cards
+    function mostrarVistaCardsSucursal() {
+        const contenedorCards = document.getElementById('vista-cards');
+
+        if (!contenedorCards) {
+            return;
         }
 
-    } catch (error) {
-        console.error('Error al guardar:', error);
-        showNotification('Error de conexión al guardar', 'error');
-    } finally {
-        // Rehabilitar botón
-        const btnGuardar = document.getElementById('btn-guardar-producto-sucursal');
-        btnGuardar.disabled = false;
-        btnGuardar.innerHTML = textoOriginal;
-    }
-}
+        let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">';
 
-/*=============================================
-EDITAR PRODUCTO-SUCURSAL
-=============================================*/
-async function editarProductoSucursal(idProductoSucursal) {
-    try {
-        modoEdicion = true;
+        productosSucursalData.forEach(producto => {
+            const imagen = producto.imagen ? producto.imagen : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjOTk5Ij5Qcm9kdWN0bzwvdGV4dD48L3N2Zz4=';
+            const stockStatus = getStockStatusSucursal(producto);
 
-        document.getElementById('modal-titulo').textContent = 'Editar Producto en Sucursal';
-        document.getElementById('texto-boton-guardar').textContent = 'Actualizar';
+            html += `
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-200">
+                    <!-- Imagen del producto -->
+                    <div class="relative h-48 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                        <img src="${imagen}" alt="${producto.descripcion}"
+                             class="w-full h-full object-cover transition-transform duration-300 hover:scale-105">
+                        <div class="absolute top-3 right-3">
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold ${producto.estado == 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                ${producto.estado == 1 ? 'Activo' : 'Inactivo'}
+                            </span>
+                        </div>
+                    </div>
 
-        // Cargar datos del producto-sucursal
-        const response = await fetch('ajax/producto-sucursal.ajax.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `accion=obtener_producto_sucursal_por_id&id=${idProductoSucursal}`
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            const producto = data.producto_sucursal;
-
-            // Llenar formulario
-            document.getElementById('idproducto_sucursal').value = producto.idproducto_sucursal;
-            document.getElementById('sucursal_idsucursal').value = producto.sucursal_idsucursal;
-            document.getElementById('precio_sucursal').value = parseFloat(producto.precio_sucursal).toFixed(5);
-            document.getElementById('stock_sucursal').value = producto.stock_sucursal;
-            document.getElementById('stock_minimo_sucursal').value = producto.stock_minimo_sucursal;
-            document.getElementById('stock_maximo_sucursal').value = producto.stock_maximo_sucursal;
-            document.getElementById('estado').value = producto.estado;
-
-            // Para edición, mostrar el producto actual (no productos disponibles)
-            const selectProductos = document.getElementById('productos_idproducto');
-            selectProductos.innerHTML = `<option value="${producto.productos_idproducto}">${producto.codigo} - ${producto.descripcion}</option>`;
-            selectProductos.value = producto.productos_idproducto;
-            selectProductos.disabled = true; // No permitir cambiar producto en edición
-
-            // Abrir modal
-            window.HSOverlay.open(document.getElementById('modal-producto-sucursal'));
-
-        } else {
-            showNotification(data.message, 'error');
-        }
-
-    } catch (error) {
-        console.error('Error al cargar datos para edición:', error);
-        showNotification('Error al cargar los datos', 'error');
-    }
-}
-
-/*=============================================
-ELIMINAR PRODUCTO-SUCURSAL
-=============================================*/
-async function eliminarProductoSucursal(idProductoSucursal, descripcion) {
-    const confirmado = await mostrarConfirmacionEliminacion(descripcion);
-
-    if (!confirmado) return;
-
-    try {
-        const response = await fetch('ajax/producto-sucursal.ajax.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `accion=eliminar_producto_sucursal&idproducto_sucursal=${idProductoSucursal}`
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            showNotification(data.message, 'success');
-            cargarProductosSucursal();
-        } else {
-            showNotification(data.message, 'error');
-        }
-
-    } catch (error) {
-        console.error('Error al eliminar:', error);
-        showNotification('Error de conexión al eliminar', 'error');
-    }
-}
-
-/*=============================================
-MODAL DE CONFIRMACIÓN PARA ELIMINAR
-=============================================*/
-function mostrarConfirmacionEliminacion(descripcion) {
-    return new Promise((resolve) => {
-        const modalHtml = `
-            <div id="modal-confirmar-eliminacion" class="hs-overlay fixed top-0 start-0 z-[60] w-full h-full bg-black bg-opacity-50 flex items-center justify-center">
-                <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-lg max-w-md w-full mx-4">
+                    <!-- Contenido de la card -->
                     <div class="p-6">
-                        <div class="flex items-center gap-4 mb-4">
-                            <div class="flex-shrink-0">
-                                <div class="flex items-center justify-center w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full">
-                                    <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                    Confirmar eliminación
-                                </h3>
-                                <p class="text-sm text-gray-500 dark:text-neutral-400">
-                                    Esta acción no se puede deshacer
-                                </p>
+                        <!-- Título y código -->
+                        <div class="mb-4">
+                            <h3 class="font-bold text-lg text-gray-900 mb-2 line-clamp-2">${producto.descripcion}</h3>
+                            <div class="flex flex-col text-sm text-gray-600 space-y-1">
+                                <span><i class="fas fa-barcode mr-2"></i>Código: ${producto.codigo}</span>
+                                <span><i class="fas fa-hashtag mr-2"></i>Cód. Auxiliar: ${producto.codigo_auxiliar}</span>
+                                <span><i class="fas fa-store mr-2"></i>Sucursal: ${producto.sucursal_nombre}</span>
                             </div>
                         </div>
 
-                        <div class="mb-6">
-                            <p class="text-gray-700 dark:text-neutral-300">
-                                ¿Estás seguro de que deseas eliminar la asignación <strong>"${descripcion}"</strong>?
-                            </p>
-                            <p class="text-sm text-gray-500 dark:text-neutral-400 mt-2">
-                                El producto será removido de la sucursal pero se conservará para fines de auditoría.
-                            </p>
+                        <!-- Precios -->
+                        <div class="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-700">Precio Base:</span>
+                                <span class="text-sm font-bold text-gray-900">$${parseFloat(producto.precio_base).toFixed(2)}</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-1">
+                                <span class="text-sm font-medium text-gray-700">Precio Sucursal:</span>
+                                <span class="text-lg font-bold text-blue-600">$${parseFloat(producto.precio_sucursal).toFixed(2)}</span>
+                            </div>
                         </div>
 
-                        <div class="flex gap-3 justify-end">
-                            <button type="button" id="btn-cancelar-eliminacion" class="py-2 px-4 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-600">
-                                Cancelar
+                        <!-- Stock con barra de progreso -->
+                        <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-medium text-gray-700">Stock:</span>
+                                <span class="text-sm font-bold ${stockStatus.color}">${producto.stock_sucursal}</span>
+                            </div>
+                            ${stockStatus.progress}
+                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>Mín: ${producto.stock_minimo_sucursal}</span>
+                                <span>Máx: ${producto.stock_maximo_sucursal}</span>
+                            </div>
+                        </div>
+
+                        <!-- Fechas -->
+                        <div class="mb-4 text-xs text-gray-500">
+                            <div class="flex justify-between">
+                                <span>Creado: ${formatearFechaSucursal(producto.created_at)}</span>
+                                <span>Categoría: ${producto.categoria_nombre}</span>
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="flex space-x-2">
+                            <button onclick="editarProductoSucursal(${producto.idproducto_sucursal})"
+                                    class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                <i class="fas fa-edit mr-2"></i>Editar
                             </button>
-                            <button type="button" id="btn-confirmar-eliminacion" class="py-2 px-4 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                                Eliminar asignación
+                            <button onclick="eliminarProductoSucursal(${producto.idproducto_sucursal})"
+                                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                <i class="fas fa-trash mr-2"></i>Eliminar
                             </button>
                         </div>
                     </div>
                 </div>
-            </div>
-        `;
-
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-        const modal = document.getElementById('modal-confirmar-eliminacion');
-        const btnCancelar = document.getElementById('btn-cancelar-eliminacion');
-        const btnConfirmar = document.getElementById('btn-confirmar-eliminacion');
-
-        modal.style.display = 'flex';
-
-        const cerrarModal = (resultado) => {
-            modal.remove();
-            resolve(resultado);
-        };
-
-        btnCancelar.addEventListener('click', () => cerrarModal(false));
-        btnConfirmar.addEventListener('click', () => cerrarModal(true));
-
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) cerrarModal(false);
+            `;
         });
 
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                cerrarModal(false);
-            }
-        });
-    });
-}
-
-/*=============================================
-CERRAR MODAL
-=============================================*/
-function cerrarModal() {
-    window.HSOverlay.close(document.getElementById('modal-producto-sucursal'));
-
-    // Rehabilitar select de productos si estaba deshabilitado
-    document.getElementById('productos_idproducto').disabled = false;
-}
-
-/*=============================================
-MOSTRAR NOTIFICACIÓN
-=============================================*/
-function showNotification(message, type = 'info') {
-    const container = document.getElementById('toast-container');
-    const id = 'toast-' + Date.now();
-
-    const typeConfig = {
-        success: {
-            icon: '✅',
-            bgColor: 'bg-green-500',
-            textColor: 'text-white'
-        },
-        error: {
-            icon: '❌',
-            bgColor: 'bg-red-500',
-            textColor: 'text-white'
-        },
-        info: {
-            icon: 'ℹ️',
-            bgColor: 'bg-blue-500',
-            textColor: 'text-white'
-        },
-        warning: {
-            icon: '⚠️',
-            bgColor: 'bg-yellow-500',
-            textColor: 'text-white'
-        }
-    };
-
-    const config = typeConfig[type] || typeConfig.info;
-
-    const toast = document.createElement('div');
-    toast.id = id;
-    toast.className = `${config.bgColor} ${config.textColor} px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full opacity-0`;
-    toast.innerHTML = `
-        <div class="flex items-center gap-3">
-            <span class="text-lg">${config.icon}</span>
-            <span class="font-medium">${message}</span>
-            <button onclick="removeToast('${id}')" class="ml-2 hover:opacity-70">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-        </div>
-    `;
-
-    container.appendChild(toast);
-
-    // Animar entrada
-    setTimeout(() => {
-        toast.classList.remove('translate-x-full', 'opacity-0');
-    }, 100);
-
-    // Auto-remove después de 5 segundos
-    setTimeout(() => {
-        removeToast(id);
-    }, 5000);
-}
-
-/*=============================================
-REMOVER NOTIFICACIÓN
-=============================================*/
-function removeToast(id) {
-    const toast = document.getElementById(id);
-    if (toast) {
-        toast.classList.add('translate-x-full', 'opacity-0');
-        setTimeout(() => {
-            toast.remove();
-        }, 300);
+        html += '</div>';
+        contenedorCards.innerHTML = html;
     }
-}
 
-console.log('✅ Producto-Sucursal JS cargado correctamente');
+    // Vista tabla
+    function mostrarVistaTablaSucursal() {
+        const tbody = document.getElementById('tabla-productos-body');
+
+        if (!tbody) {
+            return;
+        }
+
+        let html = '';
+
+        productosSucursalData.forEach(producto => {
+            const imagen = producto.imagen ? producto.imagen : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIiBmaWxsPSIjOTk5Ij5Qcm9kdWN0bzwvdGV4dD48L3N2Zz4=';
+            const stockStatus = getStockStatusSucursal(producto);
+
+            html += `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <!-- Móvil: Row expandible -->
+                    <td class="md:hidden px-3 py-4">
+                        <div class="space-y-2">
+                            <div class="flex items-center space-x-3">
+                                <img src="${imagen}" alt="${producto.descripcion}" class="w-12 h-12 object-cover rounded-lg flex-shrink-0">
+                                <div class="flex-1 min-w-0">
+                                    <div class="font-medium text-gray-900 truncate">${producto.descripcion}</div>
+                                    <div class="text-sm text-gray-500">${producto.codigo} | ${producto.sucursal_nombre}</div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="font-bold text-blue-600">$${parseFloat(producto.precio_sucursal).toFixed(2)}</span>
+                                <span class="font-bold ${stockStatus.color}">Stock: ${producto.stock_sucursal}</span>
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold ${producto.estado == 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                    ${producto.estado == 1 ? 'Activo' : 'Inactivo'}
+                                </span>
+                            </div>
+
+                            <div class="flex space-x-2">
+                                <button onclick="editarProductoSucursal(${producto.idproducto_sucursal})"
+                                        class="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors">
+                                    <i class="fas fa-edit mr-1"></i>Editar
+                                </button>
+                                <button onclick="eliminarProductoSucursal(${producto.idproducto_sucursal})"
+                                        class="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-colors">
+                                    <i class="fas fa-trash mr-1"></i>Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- Desktop: Columnas separadas -->
+                    <td class="hidden md:table-cell px-3 py-4">
+                        <div class="flex items-center space-x-3">
+                            <img src="${imagen}" alt="${producto.descripcion}" class="w-12 h-12 object-cover rounded-lg flex-shrink-0">
+                            <div class="min-w-0">
+                                <div class="font-medium text-gray-900 truncate">${producto.descripcion}</div>
+                                <div class="text-sm text-gray-500">${producto.codigo} | ${producto.codigo_auxiliar}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="hidden md:table-cell px-2 py-4 text-sm font-medium text-gray-900">${producto.sucursal_nombre}</td>
+                    <td class="hidden md:table-cell px-2 py-4 text-right">
+                        <div class="text-sm text-gray-500">$${parseFloat(producto.precio_base).toFixed(2)}</div>
+                        <div class="text-sm font-bold text-blue-600">$${parseFloat(producto.precio_sucursal).toFixed(2)}</div>
+                    </td>
+                    <td class="hidden md:table-cell px-2 py-4 text-center">
+                        <span class="font-bold ${stockStatus.color}">${producto.stock_sucursal}</span>
+                        <div class="text-xs text-gray-500">${producto.stock_minimo_sucursal}-${producto.stock_maximo_sucursal}</div>
+                    </td>
+                    <td class="hidden md:table-cell px-2 py-4 text-center">
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold ${producto.estado == 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                            ${producto.estado == 1 ? 'Activo' : 'Inactivo'}
+                        </span>
+                    </td>
+                    <td class="hidden md:table-cell px-2 py-4 text-center">
+                        <div class="flex space-x-1 justify-center">
+                            <button onclick="editarProductoSucursal(${producto.idproducto_sucursal})"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs transition-colors">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="eliminarProductoSucursal(${producto.idproducto_sucursal})"
+                                    class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs transition-colors">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+    }
+
+    // Mostrar/ocultar estado vacío
+    function mostrarEstadoVacio() {
+        const estadoVacio = document.getElementById('estado-vacio');
+        const vistaCards = document.getElementById('vista-cards');
+        const vistaTabla = document.getElementById('vista-tabla');
+
+        if (estadoVacio) estadoVacio.classList.remove('hidden');
+        if (vistaCards) vistaCards.classList.add('hidden');
+        if (vistaTabla) vistaTabla.classList.add('hidden');
+    }
+
+    function ocultarEstadoVacio() {
+        const estadoVacio = document.getElementById('estado-vacio');
+        if (estadoVacio) {
+            estadoVacio.classList.add('hidden');
+        }
+
+        // Restaurar visibilidad de los contenedores de productos
+        const vistaCards = document.getElementById('vista-cards');
+        const vistaTabla = document.getElementById('vista-tabla');
+
+        if (vistaActualSucursal === 'cards') {
+            if (vistaCards) vistaCards.classList.remove('hidden');
+            if (vistaTabla) vistaTabla.classList.add('hidden');
+        } else {
+            if (vistaCards) vistaCards.classList.add('hidden');
+            if (vistaTabla) vistaTabla.classList.remove('hidden');
+        }
+    }
+
+    // Funciones de paginación
+    function actualizarPaginacionSucursal() {
+        const totalItems = paginacionSucursal.total || 0;
+        const totalPaginas = Math.ceil(totalItems / itemsPorPaginaSucursal);
+
+        // Mostrar/ocultar controles de paginación
+        const controlesContainer = document.getElementById('paginacion-controles-sucursal');
+        if (totalItems > itemsPorPaginaSucursal) {
+            if (controlesContainer) controlesContainer.classList.remove('hidden');
+
+            // Actualizar información de paginación
+            const desde = ((paginaActualSucursal - 1) * itemsPorPaginaSucursal) + 1;
+            const hasta = Math.min(paginaActualSucursal * itemsPorPaginaSucursal, totalItems);
+
+            const elemDesde = document.getElementById('paginacion-desde-sucursal');
+            const elemHasta = document.getElementById('paginacion-hasta-sucursal');
+            const elemTotal = document.getElementById('paginacion-total-sucursal');
+
+            if (elemDesde) elemDesde.textContent = desde;
+            if (elemHasta) elemHasta.textContent = hasta;
+            if (elemTotal) elemTotal.textContent = totalItems;
+
+            // Actualizar botones anterior/siguiente
+            const btnAnterior = document.getElementById('btn-pag-anterior-sucursal');
+            const btnSiguiente = document.getElementById('btn-pag-siguiente-sucursal');
+
+            if (btnAnterior) {
+                btnAnterior.disabled = paginaActualSucursal <= 1;
+                btnAnterior.classList.toggle('opacity-50', paginaActualSucursal <= 1);
+                btnAnterior.classList.toggle('cursor-not-allowed', paginaActualSucursal <= 1);
+            }
+            if (btnSiguiente) {
+                btnSiguiente.disabled = paginaActualSucursal >= totalPaginas;
+                btnSiguiente.classList.toggle('opacity-50', paginaActualSucursal >= totalPaginas);
+                btnSiguiente.classList.toggle('cursor-not-allowed', paginaActualSucursal >= totalPaginas);
+            }
+
+            // Generar números de página
+            generarNumerosPaginaSucursal(totalPaginas);
+        } else {
+            if (controlesContainer) controlesContainer.classList.add('hidden');
+        }
+    }
+
+    function generarNumerosPaginaSucursal(totalPaginas) {
+        const contenedor = document.getElementById('paginacion-numeros-sucursal');
+        if (!contenedor) return;
+
+        let html = '';
+        const maxBotones = 5;
+        let inicio = Math.max(1, paginaActualSucursal - Math.floor(maxBotones / 2));
+        let fin = Math.min(totalPaginas, inicio + maxBotones - 1);
+
+        // Ajustar inicio si fin está en el límite
+        if (fin - inicio < maxBotones - 1) {
+            inicio = Math.max(1, fin - maxBotones + 1);
+        }
+
+        // Botón primera página si no está visible
+        if (inicio > 1) {
+            html += `<button onclick="cambiarPaginaSucursal(1)" class="inline-flex items-center justify-center w-8 h-8 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-white">1</button>`;
+            if (inicio > 2) {
+                html += `<span class="px-2 text-gray-400">...</span>`;
+            }
+        }
+
+        // Números de página
+        for (let i = inicio; i <= fin; i++) {
+            const isActive = i === paginaActualSucursal;
+            html += `<button onclick="cambiarPaginaSucursal(${i})" class="inline-flex items-center justify-center w-8 h-8 text-sm font-medium rounded-lg ${isActive
+                ? 'bg-blue-600 text-white border border-blue-600'
+                : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-white'}">${i}</button>`;
+        }
+
+        // Botón última página si no está visible
+        if (fin < totalPaginas) {
+            if (fin < totalPaginas - 1) {
+                html += `<span class="px-2 text-gray-400">...</span>`;
+            }
+            html += `<button onclick="cambiarPaginaSucursal(${totalPaginas})" class="inline-flex items-center justify-center w-8 h-8 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-white">${totalPaginas}</button>`;
+        }
+
+        contenedor.innerHTML = html;
+    }
+
+    function cambiarPaginaSucursal(nuevaPagina) {
+        paginaActualSucursal = nuevaPagina;
+        cargarProductosSucursal();
+    }
+
+    // Funciones auxiliares
+    function getStockStatusSucursal(producto) {
+        const stock = parseInt(producto.stock_sucursal);
+        const min = parseInt(producto.stock_minimo_sucursal);
+        const max = parseInt(producto.stock_maximo_sucursal);
+
+        let color, progress = '';
+
+        if (stock === 0) {
+            color = 'text-red-600';
+            progress = '<div class="w-full bg-red-200 rounded-full h-2"><div class="bg-red-500 h-2 rounded-full" style="width: 0%"></div></div>';
+        } else if (stock <= min) {
+            color = 'text-orange-600';
+            const percent = max > 0 ? (stock / max * 100).toFixed(0) : 0;
+            progress = `<div class="w-full bg-orange-200 rounded-full h-2"><div class="bg-orange-500 h-2 rounded-full" style="width: ${percent}%"></div></div>`;
+        } else if (stock <= max) {
+            color = 'text-green-600';
+            const percent = max > 0 ? (stock / max * 100).toFixed(0) : 100;
+            progress = `<div class="w-full bg-green-200 rounded-full h-2"><div class="bg-green-500 h-2 rounded-full" style="width: ${percent}%"></div></div>`;
+        } else {
+            color = 'text-blue-600';
+            progress = '<div class="w-full bg-blue-200 rounded-full h-2"><div class="bg-blue-500 h-2 rounded-full" style="width: 100%"></div></div>';
+        }
+
+        return { color, progress };
+    }
+
+    function formatearFechaSucursal(fecha) {
+        if (!fecha) return 'N/A';
+        return new Date(fecha).toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    }
+
+    function actualizarContadorSucursal() {
+        const contador = document.getElementById('total-productos-sucursal');
+        if (contador) {
+            const total = paginacionSucursal.total || 0;
+            contador.textContent = `${total} productos`;
+        }
+    }
+
+    // Funciones de modal y CRUD (implementar según necesidad)
+    function abrirModalProductoSucursal() {
+        // Modal functionality to be implemented
+    }
+
+    function editarProductoSucursal(id) {
+        // Edit functionality to be implemented
+    }
+
+    function eliminarProductoSucursal(id) {
+        // Delete functionality to be implemented
+    }
+
+    // Exponer funciones globalmente para que las pueda llamar el HTML
+    window.abrirModalProductoSucursal = abrirModalProductoSucursal;
+    window.editarProductoSucursal = editarProductoSucursal;
+    window.eliminarProductoSucursal = eliminarProductoSucursal;
+    window.cambiarPaginaSucursal = cambiarPaginaSucursal;
+
+})(); // Cerrar IIFE

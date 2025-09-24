@@ -7,14 +7,35 @@ class ControladorProductoSucursal {
     =============================================*/
     static public function ctrObtenerProductosSucursal($tenantId, $filtros = array()) {
 
-        try {
-            $productosSucursal = ModeloProductoSucursal::mdlObtenerProductosSucursal($tenantId, $filtros);
 
-            return array(
+        try {
+            // DEBUG TEMPORAL - Ver filtros procesados
+            error_log("CONTROLADOR filtros procesados: " . json_encode($filtros));
+
+            $productosSucursal = ModeloProductoSucursal::mdlObtenerProductosSucursal($tenantId, $filtros);
+            $total = ModeloProductoSucursal::mdlContarProductosSucursal($tenantId, $filtros);
+
+            // DEBUG TEMPORAL - Ver resultados
+            error_log("CONTROLADOR resultados: productos=" . count($productosSucursal) . ", total=" . $total);
+
+            $response = array(
                 "success" => true,
                 "productos_sucursal" => $productosSucursal,
-                "total" => count($productosSucursal)
+                "total" => $total
             );
+
+            // Agregar información de paginación si está presente
+            if (isset($filtros["limite"]) && isset($filtros["offset"])) {
+                $response["paginacion"] = array(
+                    "total" => $total,
+                    "limite" => intval($filtros["limite"]),
+                    "offset" => intval($filtros["offset"]),
+                    "pagina_actual" => floor(intval($filtros["offset"]) / intval($filtros["limite"])) + 1,
+                    "total_paginas" => ceil($total / intval($filtros["limite"]))
+                );
+            }
+
+            return $response;
 
         } catch (Exception $e) {
             return array(
@@ -268,10 +289,10 @@ class ControladorProductoSucursal {
     /*=============================================
     OBTENER PRODUCTOS DISPONIBLES
     =============================================*/
-    static public function ctrObtenerProductosDisponibles($sucursalId, $tenantId) {
+    static public function ctrObtenerProductosDisponibles($sucursalId, $tenantId, $searchTerm = '') {
 
         try {
-            $productos = ModeloProductoSucursal::mdlObtenerProductosDisponibles($sucursalId, $tenantId);
+            $productos = ModeloProductoSucursal::mdlObtenerProductosDisponibles($sucursalId, $tenantId, $searchTerm);
 
             return array(
                 "success" => true,
