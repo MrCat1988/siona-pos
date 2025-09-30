@@ -434,142 +434,190 @@ $(document).ready(function() {
             // Verificar si el usuario está eliminado
             const isDeleted = usuario.deleted_at !== null && usuario.deleted_at !== undefined;
 
-            let statusClass, statusText, statusIcon;
+            let statusClass, statusText, statusIcon, headerClass, cardClass;
 
             if (isDeleted) {
-                statusClass = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+                statusClass = 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300';
                 statusText = 'Eliminado';
                 statusIcon = '🗑️';
+                headerClass = 'bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 dark:from-gray-800 dark:via-gray-900 dark:to-black';
+                cardClass = 'opacity-75 saturate-50';
             } else {
-                statusClass = usuario.estado == 1 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+                statusClass = usuario.estado == 1 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300';
                 statusText = usuario.estado == 1 ? 'Activo' : 'Inactivo';
                 statusIcon = usuario.estado == 1 ? '✅' : '❌';
+                headerClass = 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20';
+                cardClass = '';
             }
 
             const roleIcons = {
                 'Administrador': '👑',
-                'Vendedor': '💼', 
+                'Vendedor': '💼',
                 'Visualizador': '👁️'
             };
             const roleIcon = roleIcons[usuario.rol] || '👤';
 
             const roleClass = {
-                'Administrador': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-                'Vendedor': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-                'Visualizador': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                'Administrador': 'bg-gradient-to-r from-red-100 to-pink-100 text-red-700 dark:from-red-900/30 dark:to-pink-900/30 dark:text-red-300',
+                'Vendedor': 'bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 dark:from-blue-900/30 dark:to-indigo-900/30 dark:text-blue-300',
+                'Visualizador': 'bg-gradient-to-r from-gray-100 to-slate-100 text-gray-700 dark:from-gray-900/30 dark:to-slate-900/30 dark:text-gray-300'
             };
 
-            // Manejar imagen del usuario
+            // Manejar imagen del usuario con diseño mejorado
             let avatarContent = '';
             if (usuario.thumbnail && usuario.thumbnail.trim() !== '' && usuario.thumbnail !== 'null') {
-                // La ruta en BD es: views/img/usuarios/tenant_X/archivo.jpg
-                // Desde pos/views/modules/usuarios.php la ruta correcta es directa: views/img/usuarios/tenant_X/archivo.jpg
                 const imagePath = usuario.thumbnail;
-                
-                console.log('Usuario:', usuario.nombre, 'Thumbnail original:', usuario.thumbnail, 'Ruta usada:', imagePath);
-                
-                // Si hay imagen, mostrarla con mejor manejo de errores
+
+                // Avatar con imagen personalizada
                 avatarContent = `
-                    <div class="w-16 h-16 relative">
-                        <img class="w-16 h-16 rounded-full object-cover border-2 border-white dark:border-neutral-700 shadow-sm" 
-                             src="${imagePath}" 
-                             alt="${usuario.nombre}"
-                             onload="console.log('Imagen cargada exitosamente:', '${imagePath}')"
-                             onerror="console.error('Error cargando imagen:', '${imagePath}'); this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-neutral-700 dark:to-neutral-600 flex items-center justify-center text-gray-400 dark:text-neutral-500 border-2 border-white dark:border-neutral-700 shadow-sm" style="display: none;">
-                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                                <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
-                            </svg>
+                    <div class="w-20 h-20 mx-auto mb-4 relative">
+                        <div class="w-20 h-20 rounded-2xl overflow-hidden shadow-lg border-4 border-white dark:border-neutral-700 relative">
+                            <img class="w-full h-full object-cover"
+                                 src="${imagePath}"
+                                 alt="${usuario.nombre}"
+                                 onload="console.log('Imagen cargada exitosamente:', '${imagePath}')"
+                                 onerror="console.error('Error cargando imagen:', '${imagePath}'); this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="w-full h-full rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white shadow-lg relative overflow-hidden" style="display: none;">
+                                <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+                                <div class="relative">
+                                    <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
+                                        <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Indicador de estado -->
+                        <div class="absolute -bottom-1 -right-1 w-6 h-6 ${usuario.estado == 1 ? 'bg-green-500' : 'bg-red-500'} rounded-full border-2 border-white dark:border-neutral-800 flex items-center justify-center">
+                            <div class="w-2 h-2 ${usuario.estado == 1 ? 'bg-green-600' : 'bg-red-600'} rounded-full"></div>
                         </div>
                     </div>`;
             } else {
-                // Si no hay imagen, mostrar avatar por defecto
-                avatarContent = `<div class="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-neutral-700 dark:to-neutral-600 flex items-center justify-center text-gray-400 dark:text-neutral-500 border-2 border-white dark:border-neutral-700 shadow-sm">
-                                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                                        <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
-                                    </svg>
-                                </div>`;
+                // Avatar por defecto con gradientes
+                const avatarGradient = isDeleted ? 'from-gray-400 to-gray-600' : 'from-blue-400 to-purple-500';
+                avatarContent = `
+                    <div class="w-20 h-20 mx-auto mb-4 relative">
+                        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br ${avatarGradient} flex items-center justify-center shadow-lg relative overflow-hidden border-4 border-white dark:border-neutral-700">
+                            <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+                            <div class="relative">
+                                <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+                        <!-- Indicador de estado -->
+                        ${!isDeleted ? `
+                        <div class="absolute -bottom-1 -right-1 w-6 h-6 ${usuario.estado == 1 ? 'bg-green-500' : 'bg-red-500'} rounded-full border-2 border-white dark:border-neutral-800 flex items-center justify-center">
+                            <div class="w-2 h-2 ${usuario.estado == 1 ? 'bg-green-600' : 'bg-red-600'} rounded-full"></div>
+                        </div>` : ''}
+                    </div>`;
             }
 
             return $(`
-                <div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 dark:bg-neutral-800 dark:border-neutral-700 hover:-translate-y-1">
-                    <!-- Header -->
-                    <div class="p-6 pb-4 flex items-start gap-4">
-                        ${avatarContent}
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">${usuario.nombre || 'N/A'}</h3>
-                            <p class="text-sm text-gray-600 dark:text-neutral-400 truncate">${usuario.cargo || 'N/A'}</p>
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 dark:bg-neutral-800 dark:border-neutral-700 overflow-hidden group hover:-translate-y-2 ${cardClass}" data-usuario-id="${usuario.idusuario}">
+                    <!-- Header con gradiente -->
+                    <div class="relative p-6 ${headerClass}">
+                        <div class="text-center">
+                            ${avatarContent}
+
+                            <!-- Información principal -->
+                            <div class="space-y-2">
+                                <h3 class="text-xl font-bold text-gray-900 dark:text-white truncate">
+                                    ${usuario.nombre || 'N/A'}
+                                </h3>
+                                <p class="text-sm font-medium text-gray-600 dark:text-neutral-400 bg-white/50 dark:bg-black/20 rounded-lg px-3 py-1 inline-block">
+                                    ${usuario.cargo || 'Sin cargo'}
+                                </p>
+                            </div>
                         </div>
                     </div>
-                    
-                    <!-- Body -->
-                    <div class="px-6 pb-4 space-y-3">
-                        <div class="flex items-center gap-2 text-sm">
-                            <svg class="w-4 h-4 text-gray-500 dark:text-neutral-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
-                            </svg>
-                            <span class="text-gray-600 dark:text-neutral-400 font-medium">Email:</span>
-                            <span class="text-gray-900 dark:text-white truncate">${usuario.email || 'N/A'}</span>
+
+                    <!-- Información de contacto -->
+                    <div class="p-6 space-y-4">
+                        <!-- Email -->
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-medium text-gray-600 dark:text-neutral-400">Email</p>
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">${usuario.email || 'No especificado'}</p>
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div class="flex items-center gap-2 text-sm">
-                            <svg class="w-4 h-4 text-gray-500 dark:text-neutral-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                            </svg>
-                            <span class="text-gray-600 dark:text-neutral-400 font-medium">Teléfono:</span>
-                            <span class="text-gray-900 dark:text-white truncate">${usuario.telefono || 'N/A'}</span>
+
+                        <!-- Teléfono -->
+                        <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-medium text-gray-600 dark:text-neutral-400">Teléfono</p>
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white">${usuario.telefono || 'No especificado'}</p>
+                                </div>
+                            </div>
                         </div>
-                        
-                        <div class="flex items-center gap-2 text-sm">
-                            <svg class="w-4 h-4 text-gray-500 dark:text-neutral-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                            </svg>
-                            <span class="text-gray-600 dark:text-neutral-400 font-medium">Rol:</span>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${roleClass[usuario.rol] || roleClass['Visualizador']}">
-                                ${roleIcon} ${usuario.rol || 'N/A'}
-                            </span>
+
+                        <!-- Rol y Estado -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <!-- Rol -->
+                            <div class="bg-white dark:bg-neutral-900/50 rounded-xl p-3 border border-gray-200 dark:border-neutral-700">
+                                <p class="text-xs font-medium text-gray-600 dark:text-neutral-400 mb-2">Rol</p>
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${roleClass[usuario.rol] || roleClass['Visualizador']} shadow-sm">
+                                    ${roleIcon} ${usuario.rol || 'N/A'}
+                                </span>
+                            </div>
+
+                            <!-- Estado -->
+                            <div class="bg-white dark:bg-neutral-900/50 rounded-xl p-3 border border-gray-200 dark:border-neutral-700">
+                                <p class="text-xs font-medium text-gray-600 dark:text-neutral-400 mb-2">Estado</p>
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${statusClass} shadow-sm">
+                                    ${statusIcon} ${statusText}
+                                </span>
+                            </div>
                         </div>
-                        
-                        <div class="flex items-center gap-2 text-sm">
-                            <svg class="w-4 h-4 text-gray-500 dark:text-neutral-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span class="text-gray-600 dark:text-neutral-400 font-medium">Estado:</span>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
-                                ${statusIcon} ${statusText}
-                            </span>
-                        </div>
-                        
+
                         ${usuario.created_at ? `
-                        <div class="flex items-center gap-2 text-sm">
-                            <svg class="w-4 h-4 text-gray-500 dark:text-neutral-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h6a2 2 0 012 2v4m-4 6h.01M15 11v6m0 0v.01M15 17.99h3M12 11h.01M9 11v6m0 0v.01M9 17.99h3m-6-6.99h12a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2v-8a2 2 0 012-2z"></path>
-                            </svg>
-                            <span class="text-gray-600 dark:text-neutral-400 font-medium">Creado:</span>
-                            <span class="text-gray-900 dark:text-white">${new Date(usuario.created_at).toLocaleDateString('es-EC')}</span>
-                        </div>
-                        ` : ''}
+                        <!-- Fecha de creación -->
+                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-gray-600 dark:text-neutral-400">Fecha de creación</p>
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white">${new Date(usuario.created_at).toLocaleDateString('es-EC')}</p>
+                                </div>
+                            </div>
+                        </div>` : ''}
                     </div>
-                    
-                    <!-- Footer -->
-                    <div class="px-6 py-4 border-t border-gray-100 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800/50">
-                        <div class="flex gap-2 justify-end">
+
+                    <!-- Botones de acción -->
+                    <div class="px-6 py-4 bg-gray-50 dark:bg-neutral-800/50 border-t border-gray-100 dark:border-neutral-700">
+                        <div class="flex gap-2">
                             ${isDeleted ? `
-                                <div class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-500 bg-gray-100 cursor-not-allowed dark:text-gray-400 dark:bg-gray-800">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl text-gray-500 bg-gray-200 cursor-not-allowed dark:text-gray-400 dark:bg-gray-800">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
                                     </svg>
                                     Usuario eliminado
                                 </div>
                             ` : `
-                                <button class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 dark:text-blue-400 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 transition-colors duration-200 btnEditarUsuario" data-id="${usuario.idusuario}">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl text-blue-700 bg-blue-100 hover:bg-blue-200 dark:text-blue-300 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 transition-all duration-200 transform hover:scale-105 btnEditarUsuario" data-id="${usuario.idusuario}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                     </svg>
                                     Editar
                                 </button>
-                                <button class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/30 transition-colors duration-200 btnEliminarUsuario" data-id="${usuario.idusuario}">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl text-red-700 bg-red-100 hover:bg-red-200 dark:text-red-300 dark:bg-red-900/30 dark:hover:bg-red-900/50 transition-all duration-200 transform hover:scale-105 btnEliminarUsuario" data-id="${usuario.idusuario}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
                                     Eliminar
@@ -2163,44 +2211,81 @@ $(document).ready(function() {
         return new Promise((resolve) => {
             // Crear modal de confirmación
             const modalHtml = `
-                <div id="modal-confirmar-eliminacion-usuario" class="hs-overlay fixed top-0 start-0 z-[60] w-full h-full bg-black bg-opacity-50 flex items-center justify-center">
-                    <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-lg max-w-md w-full mx-4">
-                        <div class="p-6">
-                            <div class="flex items-center gap-4 mb-4">
-                                <div class="flex-shrink-0">
-                                    <div class="flex items-center justify-center w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full">
-                                        <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                <div id="modal-confirmar-eliminacion-usuario" class="hs-overlay fixed top-0 start-0 z-[60] w-full h-full bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div class="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden border border-gray-100 dark:border-neutral-700 transform transition-all duration-300 scale-95 opacity-0" id="modal-content-eliminacion">
+                        <!-- Header con gradiente -->
+                        <div class="bg-gradient-to-br from-red-50 via-orange-50 to-red-100 dark:from-red-900/20 dark:via-orange-900/20 dark:to-red-900/30 px-6 py-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-16 h-16 bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+                                    <div class="relative">
+                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                         </svg>
                                     </div>
                                 </div>
                                 <div>
-                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                        Confirmar eliminación
+                                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+                                        Confirmar Eliminación
                                     </h3>
-                                    <p class="text-sm text-gray-500 dark:text-neutral-400">
-                                        Esta acción no se puede deshacer
+                                    <p class="text-sm text-gray-600 dark:text-neutral-400">
+                                        Esta acción requiere confirmación
                                     </p>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="mb-6">
-                                <p class="text-gray-700 dark:text-neutral-300">
-                                    ¿Estás seguro de que deseas eliminar el usuario <strong>"${nombreUsuario}"</strong>?
-                                </p>
-                                <p class="text-sm text-gray-500 dark:text-neutral-400 mt-2">
-                                    El sistema verificará si el usuario puede ser eliminado o necesita ser desactivado para fines de auditoría.
-                                </p>
+                        <!-- Contenido -->
+                        <div class="px-6 py-6">
+                            <!-- Mensaje principal -->
+                            <div class="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-xl p-4 border border-red-200 dark:border-red-800 mb-6">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-6 h-6 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <svg class="w-4 h-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-800 dark:text-neutral-200 font-medium">
+                                            ¿Estás seguro de que deseas eliminar a <span class="font-bold text-red-700 dark:text-red-400">"${nombreUsuario}"</span>?
+                                        </p>
+                                        <p class="text-sm text-gray-600 dark:text-neutral-400 mt-2">
+                                            El sistema verificará si el usuario puede ser eliminado o necesita ser desactivado para fines de auditoría.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="flex gap-3 justify-end">
-                                <button type="button" id="btn-cancelar-eliminacion-usuario" class="py-2 px-4 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-600">
-                                    Cancelar
-                                </button>
-                                <button type="button" id="btn-confirmar-eliminacion-usuario" class="py-2 px-4 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                                    Eliminar usuario
-                                </button>
+                            <!-- Información adicional -->
+                            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800 mb-6">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span class="text-sm font-medium text-blue-700 dark:text-blue-300">Información importante</span>
+                                </div>
+                                <ul class="text-sm text-blue-600 dark:text-blue-400 space-y-1">
+                                    <li>• Los datos relacionados se mantendrán por auditoría</li>
+                                    <li>• Esta acción puede no ser reversible</li>
+                                    <li>• Se verificarán las dependencias del sistema</li>
+                                </ul>
                             </div>
+                        </div>
+
+                        <!-- Footer con botones -->
+                        <div class="bg-gray-50 dark:bg-neutral-800/50 px-6 py-4 flex gap-3 justify-end border-t border-gray-100 dark:border-neutral-700">
+                            <button type="button" id="btn-cancelar-eliminacion-usuario" class="px-6 py-2.5 text-sm font-medium rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all duration-200 dark:bg-neutral-700 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-600">
+                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                Cancelar
+                            </button>
+                            <button type="button" id="btn-confirmar-eliminacion-usuario" class="px-6 py-2.5 text-sm font-semibold rounded-xl bg-gradient-to-r from-red-600 to-orange-600 text-white hover:from-red-700 hover:to-orange-700 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-lg transition-all duration-200 transform hover:scale-105">
+                                <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                                Eliminar Usuario
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -2213,8 +2298,17 @@ $(document).ready(function() {
             const btnCancelar = document.getElementById('btn-cancelar-eliminacion-usuario');
             const btnConfirmar = document.getElementById('btn-confirmar-eliminacion-usuario');
 
-            // Mostrar modal
+            // Mostrar modal con animación
             modal.style.display = 'flex';
+
+            // Animar entrada
+            setTimeout(() => {
+                const modalContent = document.getElementById('modal-content-eliminacion');
+                if (modalContent) {
+                    modalContent.style.transform = 'scale(1)';
+                    modalContent.style.opacity = '1';
+                }
+            }, 10);
 
             // Manejar eventos
             const cerrarModal = (resultado) => {

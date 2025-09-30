@@ -594,36 +594,18 @@ function crearCardProducto(producto) {
                         </div>` :
                         // Lógica normal para productos no eliminados
                         imagenUrl ?
-                            `<div class="w-20 h-20 mx-auto mb-4 rounded-2xl overflow-hidden shadow-lg">
+                            `<div class="w-20 h-20 mx-auto mb-4 rounded-2xl overflow-hidden shadow-lg border-4 border-white dark:border-neutral-700">
                                 <img src="${imagenUrl}" alt="${producto.descripcion}" class="w-full h-full object-cover">
                             </div>` :
-                            `<div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg relative overflow-hidden">
+                            `<div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center shadow-lg relative overflow-hidden border-4 border-white dark:border-neutral-700">
                                 <!-- Patrón de fondo sutil -->
                                 <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
 
-                                <!-- SVG de producto con etiqueta de precio -->
+                                <!-- Icono de producto moderno -->
                                 <div class="relative">
-                                    <!-- Caja del producto -->
-                                    <svg class="w-12 h-12 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                     </svg>
-
-                                    <!-- Etiqueta de precio -->
-                                    <div class="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center shadow-sm">
-                                        <svg class="w-2.5 h-2.5 text-yellow-800" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                                        </svg>
-                                    </div>
-
-                                    <!-- Código de barras pequeño -->
-                                    <div class="absolute -bottom-1 -left-1 flex gap-0.5 opacity-80">
-                                        <div class="w-0.5 h-2 bg-white rounded-full"></div>
-                                        <div class="w-0.5 h-1.5 bg-white rounded-full"></div>
-                                        <div class="w-0.5 h-2 bg-white rounded-full"></div>
-                                        <div class="w-0.5 h-1 bg-white rounded-full"></div>
-                                        <div class="w-0.5 h-2 bg-white rounded-full"></div>
-                                    </div>
                                 </div>
                             </div>`
                     }
@@ -690,20 +672,20 @@ function crearCardProducto(producto) {
                 <!-- Acciones -->
                 <div class="flex gap-2 pt-4 border-t border-gray-100 dark:border-neutral-700">
                     ${esEliminado ? `
-                        <div class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                        <div class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl text-gray-500 bg-gray-200 cursor-not-allowed dark:text-gray-400 dark:bg-gray-800">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
                             </svg>
-                            Eliminado el ${new Date(producto.deleted_at).toLocaleDateString()}
+                            Producto eliminado
                         </div>
                     ` : `
-                        <button onclick="abrirModalEditarProducto(${producto.idproducto})" class="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 text-sm font-medium rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 transition-all duration-200 dark:text-blue-400 dark:bg-blue-900/20 dark:border-blue-800">
+                        <button onclick="abrirModalEditarProducto(${producto.idproducto})" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl text-blue-700 bg-blue-100 hover:bg-blue-200 dark:text-blue-300 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 transition-all duration-200 transform hover:scale-105">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
                             Editar
                         </button>
-                        <button onclick="eliminarProducto(${producto.idproducto}, '${producto.descripcion.replace(/'/g, "\\'")}' )" class="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 hover:border-red-300 transition-all duration-200 dark:text-red-400 dark:bg-red-900/20 dark:border-red-800">
+                        <button onclick="eliminarProducto(${producto.idproducto}, '${producto.descripcion.replace(/'/g, "\\'")}' )" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl text-red-700 bg-red-100 hover:bg-red-200 dark:text-red-300 dark:bg-red-900/30 dark:hover:bg-red-900/50 transition-all duration-200 transform hover:scale-105">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                             </svg>

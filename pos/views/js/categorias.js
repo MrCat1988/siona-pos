@@ -219,75 +219,123 @@ function showToast(toastHtml) {
             // Verificar si la categoría está eliminada
             const isDeleted = categoria.deleted_at !== null && categoria.deleted_at !== undefined;
 
-            let statusClass, statusText, statusIcon;
+            let statusClass, statusText, statusIcon, headerClass, cardClass;
 
             if (isDeleted) {
-                statusClass = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+                statusClass = 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300';
                 statusText = 'Eliminada';
                 statusIcon = '🗑️';
+                headerClass = 'bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300 dark:from-gray-800 dark:via-gray-900 dark:to-black';
+                cardClass = 'opacity-75 saturate-50';
             } else {
-                statusClass = categoria.estado == 1 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+                statusClass = categoria.estado == 1 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300';
                 statusText = categoria.estado == 1 ? 'Activa' : 'Inactiva';
                 statusIcon = categoria.estado == 1 ? '✅' : '❌';
+                headerClass = 'bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-orange-900/20 dark:via-amber-900/20 dark:to-yellow-900/20';
+                cardClass = '';
             }
 
-            // Formatear fecha
-            const fechaCreacion = categoria.created_at ? new Date(categoria.created_at).toLocaleDateString('es-ES') : 'N/A';
+            // Contenido del icono de categoría
+            const categoriaIconContent = isDeleted ?
+                `<div class="w-20 h-20 mx-auto mb-4 relative">
+                    <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center shadow-lg relative overflow-hidden border-4 border-white dark:border-neutral-700">
+                        <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+                        <div class="relative">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>` :
+                `<div class="w-20 h-20 mx-auto mb-4 relative">
+                    <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-400 to-yellow-500 flex items-center justify-center shadow-lg relative overflow-hidden border-4 border-white dark:border-neutral-700">
+                        <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+                        <div class="relative">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                        </div>
+                        <!-- Indicador de estado -->
+                        <div class="absolute -bottom-1 -right-1 w-6 h-6 ${categoria.estado == 1 ? 'bg-green-500' : 'bg-red-500'} rounded-full border-2 border-white dark:border-neutral-800 flex items-center justify-center">
+                            <div class="w-2 h-2 ${categoria.estado == 1 ? 'bg-green-600' : 'bg-red-600'} rounded-full"></div>
+                        </div>
+                    </div>
+                </div>`;
 
             return $(`
-                <div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 dark:bg-neutral-800 dark:border-neutral-700 hover:-translate-y-1">
-                    <!-- Header -->
-                    <div class="p-6 pb-4 flex items-start gap-4">
-                        <div class="flex-shrink-0">
-                            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 flex items-center justify-center border-2 border-white dark:border-neutral-700 shadow-sm">
-                                <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h6v6H4V4zM14 4h6v6h-6V4zM4 14h6v6H4v-6zM14 14h6v6h-6v-6z"></path>
-                                </svg>
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 dark:bg-neutral-800 dark:border-neutral-700 overflow-hidden group hover:-translate-y-2 ${cardClass}" data-categoria-id="${categoria.idcategoria}">
+                    <!-- Header con gradiente -->
+                    <div class="relative p-6 ${headerClass}">
+                        <div class="text-center">
+                            ${categoriaIconContent}
+
+                            <!-- Información principal -->
+                            <div class="space-y-2">
+                                <h3 class="text-xl font-bold text-gray-900 dark:text-white truncate">
+                                    ${categoria.nombre || 'N/A'}
+                                </h3>
+                                <p class="text-sm font-medium text-gray-600 dark:text-neutral-400 bg-white/50 dark:bg-black/20 rounded-lg px-3 py-1 inline-block">
+                                    ${categoria.descripcion || 'Sin descripción'}
+                                </p>
                             </div>
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1 truncate">${categoria.nombre || 'N/A'}</h3>
-                            <p class="text-sm text-gray-600 dark:text-neutral-400 truncate">${categoria.descripcion || 'Sin descripción'}</p>
-                        </div>
                     </div>
 
-                    <!-- Body -->
-                    <div class="px-6 pb-4 space-y-3">
-                        <div class="flex items-center gap-2 text-sm">
-                            <svg class="w-4 h-4 text-gray-500 dark:text-neutral-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            <span class="text-gray-600 dark:text-neutral-400 font-medium">Fecha:</span>
-                            <span class="text-gray-900 dark:text-white">${fechaCreacion}</span>
+                    <!-- Información de la categoría -->
+                    <div class="p-6 space-y-4">
+                        <!-- Estado -->
+                        <div class="bg-white dark:bg-neutral-900/50 rounded-xl p-4 border border-gray-200 dark:border-neutral-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-medium text-gray-600 dark:text-neutral-400 mb-2">Estado</p>
+                                    <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium ${statusClass} shadow-sm">
+                                        ${statusIcon} ${statusText}
+                                    </span>
+                                </div>
+                                <div class="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="flex items-center gap-2 text-sm">
-                            <svg class="w-4 h-4 text-gray-500 dark:text-neutral-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span class="text-gray-600 dark:text-neutral-400 font-medium">Estado:</span>
-                            <span class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${statusClass}">
-                                ${statusIcon} ${statusText}
-                            </span>
-                        </div>
+                        ${categoria.created_at ? `
+                        <!-- Fecha de creación -->
+                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-gray-600 dark:text-neutral-400">Fecha de creación</p>
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white">${categoria.created_at ? new Date(categoria.created_at).toLocaleDateString('es-ES') : 'N/A'}</p>
+                                </div>
+                            </div>
+                        </div>` : ''}
                     </div>
 
-                    <!-- Footer con acciones -->
-                    <div class="px-6 py-4 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800/50">
-                        <div class="flex items-center justify-end gap-2">
+                    <!-- Botones de acción -->
+                    <div class="px-6 py-4 bg-gray-50 dark:bg-neutral-800/50 border-t border-gray-100 dark:border-neutral-700">
+                        <div class="flex gap-2">
                             ${isDeleted ? `
-                                <span class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-gray-500 bg-gray-100 dark:text-neutral-400 dark:bg-neutral-700">
-                                    🗑️ Categoría eliminada
-                                </span>
+                                <div class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl text-gray-500 bg-gray-200 cursor-not-allowed dark:text-gray-400 dark:bg-gray-800">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"></path>
+                                    </svg>
+                                    Categoría eliminada
+                                </div>
                             ` : `
-                                <button class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-amber-600 bg-amber-50 hover:bg-amber-100 hover:text-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:text-amber-400 dark:bg-amber-900/20 dark:hover:bg-amber-900/30 transition-colors duration-200 btnEditarCategoria" data-id="${categoria.idcategoria}">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl text-blue-700 bg-blue-100 hover:bg-blue-200 dark:text-blue-300 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 transition-all duration-200 transform hover:scale-105 btnEditarCategoria" data-id="${categoria.idcategoria}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                     </svg>
                                     Editar
                                 </button>
-                                <button class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-red-600 bg-red-50 hover:bg-red-100 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/30 transition-colors duration-200 btnEliminarCategoria" data-id="${categoria.idcategoria}">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl text-red-700 bg-red-100 hover:bg-red-200 dark:text-red-300 dark:bg-red-900/30 dark:hover:bg-red-900/50 transition-all duration-200 transform hover:scale-105 btnEliminarCategoria" data-id="${categoria.idcategoria}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
                                     Eliminar

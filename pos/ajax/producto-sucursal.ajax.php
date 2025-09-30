@@ -243,11 +243,12 @@ class AjaxProductoSucursal {
     }
 }
 
-// Procesar la acción solicitada
-if (isset($_POST["accion"])) {
+// Procesar la acción solicitada (GET o POST)
+$accion = $_POST["accion"] ?? $_GET["accion"] ?? null;
+if ($accion) {
     $ajax = new AjaxProductoSucursal();
 
-    switch ($_POST["accion"]) {
+    switch ($accion) {
         case "obtener_productos_sucursal":
             $ajax->obtenerProductosSucursal();
             break;

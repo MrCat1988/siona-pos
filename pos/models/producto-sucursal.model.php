@@ -396,7 +396,13 @@ class ModeloProductoSucursal {
 
         try {
             $sql = "
-                SELECT p.idproducto, p.codigo, p.descripcion, p.precio_de_venta
+                SELECT
+                    p.idproducto,
+                    p.codigo,
+                    p.codigo_auxiliar,
+                    p.descripcion,
+                    p.precio_de_venta as precio_venta,
+                    c.nombre as categoria
                 FROM producto p
                 INNER JOIN categoria c ON p.categoria_idcategoria = c.idcategoria
                 LEFT JOIN producto_por_sucursal ps ON p.idproducto = ps.productos_idproducto

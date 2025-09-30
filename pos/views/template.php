@@ -56,6 +56,7 @@
                 $_GET["route"] == 'categorias' ||
                 $_GET["route"] == 'productos' ||
                 $_GET["route"] == 'producto-sucursal' ||
+                $_GET["route"] == 'punto-de-emision' ||
                 $_GET["route"] == 'content'
 
 
@@ -509,6 +510,8 @@
     <script src="./views/js/sucursales.js"></script>
     <script src="./views/js/categorias.js"></script>
     <script src="./views/js/productos.js"></script>
+    <script src="./views/js/producto-sucursal.js"></script>
+    <script src="./views/js/punto-de-emision.js"></script>
 
 </body>
 

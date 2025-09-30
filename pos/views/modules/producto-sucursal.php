@@ -27,7 +27,7 @@
                                         <span id="btn-ver-todos-text">Ver todos</span>
                                     </button>
 
-                                    <button type="button" id="btn-agregar-producto-sucursal" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-hidden focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
+                                    <button type="button" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-hidden focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" data-hs-overlay="#modal-producto-sucursal">
                                         <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M5 12h14" />
                                             <path d="M12 5v14" />
@@ -109,7 +109,7 @@
                         </div>
 
                         <!-- Container para las vistas -->
-                        <div class="p-6">
+                        <div class="p-4 md:p-6">
                             <!-- Loading state -->
                             <div id="loading-productos-sucursal" class="flex items-center justify-center py-12">
                                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -225,8 +225,7 @@
                                 </div>
                                 <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No hay productos asignados</h3>
                                 <p class="text-gray-500 dark:text-gray-400 mb-6">Comienza asignando productos a tus sucursales</p>
-                                <button type="button" id="btn-agregar-desde-vacio"
-                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" data-hs-overlay="#modal-producto-sucursal">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                     </svg>
@@ -263,7 +262,7 @@
                         </p>
                     </div>
                 </div>
-                <button type="button" id="btn-cerrar-modal" class="flex justify-center items-center w-10 h-10 text-sm font-semibold rounded-xl border border-transparent text-gray-500 hover:bg-white hover:text-gray-800 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-white">
+                <button type="button" class="flex justify-center items-center w-10 h-10 text-sm font-semibold rounded-xl border border-transparent text-gray-500 hover:bg-white hover:text-gray-800 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-white" data-hs-overlay="#modal-producto-sucursal">
                     <span class="sr-only">Close</span>
                     <svg class="flex-shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m18 6-12 12"></path>
@@ -523,8 +522,7 @@
 
             <!-- Footer -->
             <div class="flex justify-end items-center gap-x-3 py-4 px-8 bg-gray-50 dark:bg-neutral-800/50">
-                <button type="button" id="btn-cancelar-modal"
-                        class="py-3 px-6 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:border-neutral-500">
+                <button type="button" class="py-3 px-6 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:border-neutral-500" data-hs-overlay="#modal-producto-sucursal">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
@@ -543,6 +541,178 @@
         </div>
     </div>
 </div>
+</div>
+
+<!-- Modal Editar Producto-Sucursal -->
+<div id="modal-editar-producto-sucursal" class="hs-overlay hidden size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto pointer-events-none">
+    <div class="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-2xl sm:w-full m-3 sm:mx-auto">
+        <div class="flex flex-col bg-white shadow-2xl rounded-2xl pointer-events-auto dark:bg-neutral-800 dark:shadow-neutral-700/70 overflow-hidden">
+
+            <!-- Header -->
+            <div class="flex justify-between items-center py-6 px-8 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-neutral-800 dark:to-neutral-800">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center justify-center w-12 h-12 bg-orange-100 rounded-xl dark:bg-orange-900/20">
+                        <svg class="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+                            Editar Producto en Sucursal
+                        </h3>
+                        <p class="text-sm text-gray-600 dark:text-neutral-400">
+                            Modificar precio y stock específico de la sucursal
+                        </p>
+                    </div>
+                </div>
+                <button type="button" class="flex justify-center items-center w-10 h-10 text-sm font-semibold rounded-xl border border-transparent text-gray-500 hover:bg-white hover:text-gray-800 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-white" data-hs-overlay="#modal-editar-producto-sucursal">
+                    <span class="sr-only">Close</span>
+                    <svg class="flex-shrink-0 size-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m18 6-12 12"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="p-8 overflow-y-auto max-h-[70vh]">
+                <form id="form-editar-producto-sucursal" class="space-y-6">
+
+                    <!-- ID oculto -->
+                    <input type="hidden" id="edit_idproducto_sucursal" name="idproducto_sucursal">
+
+                    <!-- Información del producto (solo lectura) -->
+                    <div class="bg-gray-50 dark:bg-neutral-800/50 rounded-xl p-6">
+                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                            Producto Asignado
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Producto (solo lectura) -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                    📦 Producto
+                                </label>
+                                <div class="py-3 px-4 bg-gray-100 dark:bg-neutral-700 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-700 dark:text-neutral-300">
+                                    <span id="edit_producto_info">-</span>
+                                </div>
+                            </div>
+
+                            <!-- Sucursal (editable) -->
+                            <div>
+                                <label for="edit_sucursal_idsucursal" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                    🏪 Sucursal <span class="text-red-500">*</span>
+                                </label>
+                                <select id="edit_sucursal_idsucursal" name="sucursal_idsucursal" required
+                                        class="py-3 px-4 block w-full border-gray-300 rounded-lg text-sm focus:border-orange-500 focus:ring-orange-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                                    <option value="">Seleccionar sucursal...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Precios -->
+                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800">
+                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                            </svg>
+                            Gestión de Precios
+                        </h4>
+
+                        <div>
+                            <label for="edit_precio_sucursal" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                💰 Precio en Sucursal <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 dark:text-neutral-400">$</span>
+                                <input type="number" id="edit_precio_sucursal" name="precio_sucursal"
+                                       step="0.00001" min="0" max="99999.99999" placeholder="0.00000" required
+                                       class="py-3 pl-8 pr-4 block w-full border-gray-300 rounded-lg text-sm focus:border-green-500 focus:ring-green-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stock -->
+                    <div class="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
+                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                            Stock e Inventario
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="edit_stock_sucursal" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                    📊 Stock Actual
+                                </label>
+                                <input type="number" id="edit_stock_sucursal" name="stock_sucursal"
+                                       min="0" max="999999" placeholder="0" step="1"
+                                       class="py-3 px-4 block w-full border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                            </div>
+                            <div>
+                                <label for="edit_stock_minimo_sucursal" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                    ⚠️ Stock Mínimo
+                                </label>
+                                <input type="number" id="edit_stock_minimo_sucursal" name="stock_minimo_sucursal"
+                                       min="0" max="999999" placeholder="0" step="1"
+                                       class="py-3 px-4 block w-full border-gray-300 rounded-lg text-sm focus:border-orange-500 focus:ring-orange-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                            </div>
+                            <div>
+                                <label for="edit_stock_maximo_sucursal" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                    ✅ Stock Máximo
+                                </label>
+                                <input type="number" id="edit_stock_maximo_sucursal" name="stock_maximo_sucursal"
+                                       min="0" max="999999" placeholder="0" step="1"
+                                       class="py-3 px-4 block w-full border-gray-300 rounded-lg text-sm focus:border-green-500 focus:ring-green-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estado -->
+                    <div class="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-neutral-800/50 dark:to-neutral-800/50 rounded-xl p-6 border border-gray-200 dark:border-neutral-700">
+                        <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-600 dark:text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            Estado de la Asignación
+                        </h4>
+                        <div>
+                            <label for="edit_estado" class="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+                                🔄 Estado
+                            </label>
+                            <select id="edit_estado" name="estado"
+                                    class="py-3 px-4 block w-full border-gray-300 rounded-lg text-sm focus:border-gray-500 focus:ring-gray-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+                                <option value="1">✅ Activo - Producto disponible en sucursal</option>
+                                <option value="0">❌ Inactivo - Producto no disponible temporalmente</option>
+                            </select>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex justify-end items-center gap-x-3 py-4 px-8 bg-gray-50 dark:bg-neutral-800/50">
+                <button type="button" class="py-3 px-6 inline-flex items-center gap-x-2 text-sm font-medium rounded-xl border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:border-neutral-500" data-hs-overlay="#modal-editar-producto-sucursal">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Cancelar
+                </button>
+                <button type="button" id="btn-actualizar-producto-sucursal"
+                        class="py-3 px-6 inline-flex items-center gap-x-2 text-sm font-semibold rounded-xl border border-transparent bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-lg hover:from-orange-700 hover:to-amber-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none transition-all duration-200 transform hover:scale-105">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    Actualizar Producto
+                </button>
+            </div>
+
+        </div>
+    </div>
 </div>
 
 <!-- Notificaciones Toast -->
