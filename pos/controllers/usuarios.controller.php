@@ -368,8 +368,15 @@ class UsuariosController {
             echo json_encode(array("status" => "error", "message" => "Sesión no válida"));
             return;
         }
-        
+
         if ($_POST) {
+            // Validar CSRF token
+            if (isset($_POST['csrf_token']) && isset($_SESSION['csrf_token'])) {
+                if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+                    echo json_encode(array("status" => "error", "message" => "Token CSRF inválido"));
+                    return;
+                }
+            }
             // Verificar que el usuario no se desactive a sí mismo
             if ($_POST['idusuario'] == $_SESSION['usuario_id'] && $_POST['estado'] == '0') {
                 echo json_encode(array("status" => "error", "message" => "No puedes desactivar tu propio usuario"));
@@ -510,10 +517,18 @@ class UsuariosController {
             echo json_encode(array("status" => "error", "message" => "Sesión no válida"));
             return;
         }
-        
+
         if (isset($_POST['idusuario'])) {
+            // Validar CSRF token
+            if (isset($_POST['csrf_token']) && isset($_SESSION['csrf_token'])) {
+                if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+                    echo json_encode(array("status" => "error", "message" => "Token CSRF inválido"));
+                    return;
+                }
+            }
+
             $idusuario = $_POST['idusuario'];
-            
+
             // No permitir eliminar al propio usuario
             if ($idusuario == $_SESSION['usuario_id']) {
                 echo json_encode(array("status" => "error", "message" => "No puedes eliminar tu propio usuario"));

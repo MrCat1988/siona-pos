@@ -300,7 +300,7 @@ class PuntoDeEmisionController {
                 "sucursal_idsucursal" => $_POST['sucursal_idsucursal']
             );
 
-            $respuesta = PuntoDeEmisionModel::mdlActualizarPuntoEmision("punto_de_emision", $datos);
+            $respuesta = PuntoDeEmisionModel::mdlActualizarPuntoEmision("punto_de_emision", $datos, $_SESSION['tenant_id']);
 
             if ($respuesta) {
                 echo json_encode(array("status" => "success", "message" => "Punto de emisión actualizado exitosamente"));
@@ -348,7 +348,7 @@ class PuntoDeEmisionController {
             }
 
             // Verificar si tiene facturas asociadas
-            $tieneFacturas = PuntoDeEmisionModel::mdlVerificarFacturasAsociadas($idpunto_de_emision);
+            $tieneFacturas = PuntoDeEmisionModel::mdlVerificarFacturasAsociadas($idpunto_de_emision, $_SESSION['tenant_id']);
 
             if ($tieneFacturas) {
                 echo json_encode(array(
@@ -359,7 +359,7 @@ class PuntoDeEmisionController {
             }
 
             // Proceder con la eliminación (soft delete)
-            $respuesta = PuntoDeEmisionModel::mdlEliminarPuntoEmision("punto_de_emision", $idpunto_de_emision);
+            $respuesta = PuntoDeEmisionModel::mdlEliminarPuntoEmision("punto_de_emision", $idpunto_de_emision, $_SESSION['tenant_id']);
 
             if ($respuesta) {
                 echo json_encode(array("status" => "success", "message" => "Punto de emisión eliminado exitosamente"));

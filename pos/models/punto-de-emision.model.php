@@ -165,19 +165,21 @@ class PuntoDeEmisionModel {
     /**
      * Actualizar un punto de emisión
      */
-    static public function mdlActualizarPuntoEmision($tabla, $datos) {
-        $sql = "UPDATE $tabla SET
-                    codigo_sri = :codigo_sri,
-                    descripcion = :descripcion,
-                    secuencial_factura = :secuencial_factura,
-                    secuencial_nota_credito = :secuencial_nota_credito,
-                    secuencial_nota_debito = :secuencial_nota_debito,
-                    secuencial_guia_remision = :secuencial_guia_remision,
-                    secuencial_retencion = :secuencial_retencion,
-                    estado = :estado,
-                    updated_at = NOW(),
-                    sucursal_idsucursal = :sucursal_idsucursal
-                WHERE idpunto_de_emision = :idpunto_de_emision";
+    static public function mdlActualizarPuntoEmision($tabla, $datos, $tenantId = null) {
+        $sql = "UPDATE $tabla pe
+                INNER JOIN sucursal s ON pe.sucursal_idsucursal = s.idsucursal
+                SET pe.codigo_sri = :codigo_sri,
+                    pe.descripcion = :descripcion,
+                    pe.secuencial_factura = :secuencial_factura,
+                    pe.secuencial_nota_credito = :secuencial_nota_credito,
+                    pe.secuencial_nota_debito = :secuencial_nota_debito,
+                    pe.secuencial_guia_remision = :secuencial_guia_remision,
+                    pe.secuencial_retencion = :secuencial_retencion,
+                    pe.estado = :estado,
+                    pe.updated_at = NOW(),
+                    pe.sucursal_idsucursal = :sucursal_idsucursal
+                WHERE pe.idpunto_de_emision = :idpunto_de_emision
+                AND s.tenant_id = :tenant_id";
 
         $stmt = Connection::connect()->prepare($sql);
 
@@ -191,6 +193,7 @@ class PuntoDeEmisionModel {
         $stmt->bindParam(":estado", $datos["estado"], PDO::PARAM_INT);
         $stmt->bindParam(":sucursal_idsucursal", $datos["sucursal_idsucursal"], PDO::PARAM_INT);
         $stmt->bindParam(":idpunto_de_emision", $datos["idpunto_de_emision"], PDO::PARAM_INT);
+        $stmt->bindParam(":tenant_id", $tenantId, PDO::PARAM_INT);
 
         return $stmt->execute();
     }
@@ -198,11 +201,16 @@ class PuntoDeEmisionModel {
     /**
      * Eliminar un punto de emisión (soft delete)
      */
-    static public function mdlEliminarPuntoEmision($tabla, $id) {
-        $sql = "UPDATE $tabla SET deleted_at = NOW() WHERE idpunto_de_emision = :id";
+    static public function mdlEliminarPuntoEmision($tabla, $id, $tenantId = null) {
+        $sql = "UPDATE $tabla pe
+                INNER JOIN sucursal s ON pe.sucursal_idsucursal = s.idsucursal
+                SET pe.deleted_at = NOW()
+                WHERE pe.idpunto_de_emision = :id
+                AND s.tenant_id = :tenant_id";
 
         $stmt = Connection::connect()->prepare($sql);
         $stmt->bindParam(":id", $id, PDO::PARAM_INT);
+        $stmt->bindParam(":tenant_id", $tenantId, PDO::PARAM_INT);
 
         return $stmt->execute();
     }
@@ -210,11 +218,17 @@ class PuntoDeEmisionModel {
     /**
      * Verificar si un punto de emisión tiene facturas asociadas
      */
-    static public function mdlVerificarFacturasAsociadas($puntoEmisionId) {
-        $sql = "SELECT COUNT(*) as total FROM factura WHERE puntos_de_emision_idpunto_de_emision = :punto_emision_id";
+    static public function mdlVerificarFacturasAsociadas($puntoEmisionId, $tenantId = null) {
+        $sql = "SELECT COUNT(*) as total
+                FROM factura f
+                INNER JOIN punto_de_emision pe ON f.puntos_de_emision_idpunto_de_emision = pe.idpunto_de_emision
+                INNER JOIN sucursal s ON pe.sucursal_idsucursal = s.idsucursal
+                WHERE f.puntos_de_emision_idpunto_de_emision = :punto_emision_id
+                AND s.tenant_id = :tenant_id";
 
         $stmt = Connection::connect()->prepare($sql);
         $stmt->bindParam(":punto_emision_id", $puntoEmisionId, PDO::PARAM_INT);
+        $stmt->bindParam(":tenant_id", $tenantId, PDO::PARAM_INT);
         $stmt->execute();
 
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -224,13 +238,18 @@ class PuntoDeEmisionModel {
     /**
      * Obtener siguiente secuencial para un tipo de documento
      */
-    static public function mdlObtenerSiguienteSecuencial($tabla, $puntoEmisionId, $tipoDocumento) {
+    static public function mdlObtenerSiguienteSecuencial($tabla, $puntoEmisionId, $tipoDocumento, $tenantId = null) {
         $campo = "secuencial_" . $tipoDocumento;
 
-        $sql = "SELECT $campo as secuencial FROM $tabla WHERE idpunto_de_emision = :punto_emision_id";
+        $sql = "SELECT pe.$campo as secuencial
+                FROM $tabla pe
+                INNER JOIN sucursal s ON pe.sucursal_idsucursal = s.idsucursal
+                WHERE pe.idpunto_de_emision = :punto_emision_id
+                AND s.tenant_id = :tenant_id";
 
         $stmt = Connection::connect()->prepare($sql);
         $stmt->bindParam(":punto_emision_id", $puntoEmisionId, PDO::PARAM_INT);
+        $stmt->bindParam(":tenant_id", $tenantId, PDO::PARAM_INT);
         $stmt->execute();
 
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -240,15 +259,19 @@ class PuntoDeEmisionModel {
     /**
      * Actualizar secuencial de un tipo de documento
      */
-    static public function mdlActualizarSecuencial($tabla, $puntoEmisionId, $tipoDocumento, $nuevoSecuencial) {
+    static public function mdlActualizarSecuencial($tabla, $puntoEmisionId, $tipoDocumento, $nuevoSecuencial, $tenantId = null) {
         $campo = "secuencial_" . $tipoDocumento;
 
-        $sql = "UPDATE $tabla SET $campo = :nuevo_secuencial, updated_at = NOW()
-                WHERE idpunto_de_emision = :punto_emision_id";
+        $sql = "UPDATE $tabla pe
+                INNER JOIN sucursal s ON pe.sucursal_idsucursal = s.idsucursal
+                SET pe.$campo = :nuevo_secuencial, pe.updated_at = NOW()
+                WHERE pe.idpunto_de_emision = :punto_emision_id
+                AND s.tenant_id = :tenant_id";
 
         $stmt = Connection::connect()->prepare($sql);
         $stmt->bindParam(":nuevo_secuencial", $nuevoSecuencial, PDO::PARAM_INT);
         $stmt->bindParam(":punto_emision_id", $puntoEmisionId, PDO::PARAM_INT);
+        $stmt->bindParam(":tenant_id", $tenantId, PDO::PARAM_INT);
 
         return $stmt->execute();
     }

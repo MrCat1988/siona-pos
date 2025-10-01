@@ -6,9 +6,16 @@ class ControladorProductoSucursal {
     OBTENER PRODUCTOS POR SUCURSAL
     =============================================*/
     static public function ctrObtenerProductosSucursal($tenantId, $filtros = array()) {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
 
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida", "productos_sucursal" => array());
+        }
 
-        try {
+        try{
             // DEBUG TEMPORAL - Ver filtros procesados
             error_log("CONTROLADOR filtros procesados: " . json_encode($filtros));
 
@@ -50,6 +57,14 @@ class ControladorProductoSucursal {
     OBTENER PRODUCTO-SUCURSAL POR ID
     =============================================*/
     static public function ctrObtenerProductoSucursalPorId($idProductoSucursal, $tenantId) {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida");
+        }
 
         try {
             $productoSucursal = ModeloProductoSucursal::mdlObtenerProductoSucursalPorId($idProductoSucursal, $tenantId);
@@ -78,6 +93,21 @@ class ControladorProductoSucursal {
     CREAR PRODUCTO-SUCURSAL
     =============================================*/
     static public function ctrCrearProductoSucursal($datos) {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida");
+        }
+
+        // Validar CSRF token si está disponible
+        if (isset($datos['csrf_token']) && isset($_SESSION['csrf_token'])) {
+            if (!hash_equals($_SESSION['csrf_token'], $datos['csrf_token'])) {
+                return array("success" => false, "message" => "Token CSRF inválido");
+            }
+        }
 
         try {
             // Validaciones básicas
@@ -161,6 +191,21 @@ class ControladorProductoSucursal {
     ACTUALIZAR PRODUCTO-SUCURSAL
     =============================================*/
     static public function ctrActualizarProductoSucursal($idProductoSucursal, $datos, $tenantId) {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida");
+        }
+
+        // Validar CSRF token si está disponible
+        if (isset($datos['csrf_token']) && isset($_SESSION['csrf_token'])) {
+            if (!hash_equals($_SESSION['csrf_token'], $datos['csrf_token'])) {
+                return array("success" => false, "message" => "Token CSRF inválido");
+            }
+        }
 
         try {
             // Verificar que el registro existe
@@ -262,6 +307,21 @@ class ControladorProductoSucursal {
     ELIMINAR PRODUCTO-SUCURSAL
     =============================================*/
     static public function ctrEliminarProductoSucursal($idProductoSucursal, $tenantId) {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida");
+        }
+
+        // Validar CSRF token si está disponible
+        if (isset($_POST['csrf_token']) && isset($_SESSION['csrf_token'])) {
+            if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+                return array("success" => false, "message" => "Token CSRF inválido");
+            }
+        }
 
         try {
             $resultado = ModeloProductoSucursal::mdlEliminarProductoSucursal($idProductoSucursal, $tenantId);
@@ -290,6 +350,14 @@ class ControladorProductoSucursal {
     OBTENER PRODUCTOS DISPONIBLES
     =============================================*/
     static public function ctrObtenerProductosDisponibles($sucursalId, $tenantId, $searchTerm = '') {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida", "productos" => array());
+        }
 
         try {
             $productos = ModeloProductoSucursal::mdlObtenerProductosDisponibles($sucursalId, $tenantId, $searchTerm);
@@ -312,6 +380,14 @@ class ControladorProductoSucursal {
     OBTENER SUCURSALES DISPONIBLES
     =============================================*/
     static public function ctrObtenerSucursalesDisponibles($tenantId) {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida", "sucursales" => array());
+        }
 
         try {
             $sucursales = ModeloProductoSucursal::mdlObtenerSucursalesDisponibles($tenantId);

@@ -6,6 +6,14 @@ class ControladorProductos {
     OBTENER SIGUIENTE CÓDIGO SECUENCIAL
     =============================================*/
     static public function ctrObtenerSiguienteCodigo($tenantId) {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida");
+        }
 
         try {
             $ultimoCodigo = ModeloProductos::mdlObtenerUltimoCodigo($tenantId);
@@ -47,6 +55,14 @@ class ControladorProductos {
     VERIFICAR SI CÓDIGO EXISTE
     =============================================*/
     static public function ctrVerificarCodigoExiste($codigo, $tenantId) {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida", "existe" => false);
+        }
 
         try {
             $existe = ModeloProductos::mdlVerificarCodigoExiste($codigo, $tenantId);
@@ -69,6 +85,14 @@ class ControladorProductos {
     VERIFICAR SI CÓDIGO AUXILIAR EXISTE
     =============================================*/
     static public function ctrVerificarCodigoAuxiliarExiste($codigoAuxiliar, $tenantId, $productoId = null) {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida", "existe" => false);
+        }
 
         try {
             $existe = ModeloProductos::mdlVerificarCodigoAuxiliarExiste($codigoAuxiliar, $tenantId, $productoId);
@@ -92,6 +116,21 @@ class ControladorProductos {
     CREAR PRODUCTO
     =============================================*/
     static public function ctrCrearProducto($datos) {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida");
+        }
+
+        // Validar CSRF token si está disponible
+        if (isset($datos['csrf_token']) && isset($_SESSION['csrf_token'])) {
+            if (!hash_equals($_SESSION['csrf_token'], $datos['csrf_token'])) {
+                return array("success" => false, "message" => "Token CSRF inválido");
+            }
+        }
 
         try {
 
@@ -143,6 +182,14 @@ class ControladorProductos {
     OBTENER PRODUCTOS
     =============================================*/
     static public function ctrObtenerProductos($tenantId, $filtros = array()) {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida", "productos" => array());
+        }
 
         try {
             $productos = ModeloProductos::mdlObtenerProductos($tenantId, $filtros);
@@ -166,6 +213,14 @@ class ControladorProductos {
     OBTENER PRODUCTO POR ID
     =============================================*/
     static public function ctrObtenerProductoPorId($idProducto, $tenantId) {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida");
+        }
 
         try {
             $producto = ModeloProductos::mdlObtenerProductoPorId($idProducto, $tenantId);
@@ -194,6 +249,21 @@ class ControladorProductos {
     ACTUALIZAR PRODUCTO
     =============================================*/
     static public function ctrActualizarProducto($idProducto, $datos, $tenantId) {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida");
+        }
+
+        // Validar CSRF token si está disponible
+        if (isset($datos['csrf_token']) && isset($_SESSION['csrf_token'])) {
+            if (!hash_equals($_SESSION['csrf_token'], $datos['csrf_token'])) {
+                return array("success" => false, "message" => "Token CSRF inválido");
+            }
+        }
 
         try {
             // Verificar que el producto existe y pertenece al tenant
@@ -253,6 +323,21 @@ class ControladorProductos {
     ELIMINAR PRODUCTO (SOFT DELETE)
     =============================================*/
     static public function ctrEliminarProducto($idProducto, $tenantId) {
+        // Validar sesión
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['tenant_id'])) {
+            return array("success" => false, "message" => "Sesión no válida");
+        }
+
+        // Validar CSRF token si está disponible (cuando se llama desde AJAX con POST)
+        if (isset($_POST['csrf_token']) && isset($_SESSION['csrf_token'])) {
+            if (!hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+                return array("success" => false, "message" => "Token CSRF inválido");
+            }
+        }
 
         try {
             $resultado = ModeloProductos::mdlEliminarProducto($idProducto, $tenantId);
