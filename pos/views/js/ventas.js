@@ -466,6 +466,13 @@ function inicializarEventos() {
         validarIdentificacionCliente();
     });
 
+    // Botón rápido Consumidor Final
+    $('#btn-consumidor-final').on('click', function() {
+        console.log('⚡ Cargando Consumidor Final rápidamente...');
+        cargarConsumidorFinal();
+        $('#buscar-cliente').val(''); // Limpiar búsqueda
+    });
+
     // Procesar venta
     $('#btn-procesar-venta').on('click', function() {
         procesarVenta();

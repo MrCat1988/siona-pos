@@ -48,13 +48,21 @@ if (!isset($_SESSION['csrf_token'])) {
                         <!-- Búsqueda de Cliente -->
                         <div class="md:col-span-2 lg:col-span-1">
                             <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Buscar por ID o Nombre</label>
-                            <div class="relative">
-                                <input type="text" id="buscar-cliente" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Ej: 1721234567 o Juan Pérez">
-                                <input type="hidden" id="cliente-seleccionado-id" value="">
-                                <!-- Dropdown de resultados -->
-                                <div id="clientes-resultado" class="hidden absolute z-10 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-neutral-800 dark:border-neutral-700">
-                                    <!-- Se llenará dinámicamente -->
+                            <div class="flex gap-2">
+                                <div class="relative flex-1">
+                                    <input type="text" id="buscar-cliente" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Ej: 1721234567 o Juan Pérez">
+                                    <input type="hidden" id="cliente-seleccionado-id" value="">
+                                    <!-- Dropdown de resultados -->
+                                    <div id="clientes-resultado" class="hidden absolute z-10 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-neutral-800 dark:border-neutral-700">
+                                        <!-- Se llenará dinámicamente -->
+                                    </div>
                                 </div>
+                                <button type="button" id="btn-consumidor-final" class="px-3 py-2 inline-flex items-center gap-x-1 text-xs font-medium rounded-lg border border-green-600 bg-green-600 text-white hover:bg-green-700 focus:outline-hidden focus:bg-green-700 dark:border-green-500 dark:bg-green-500 dark:hover:bg-green-600 whitespace-nowrap" title="Venta rápida con Consumidor Final">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                    </svg>
+                                    C.Final
+                                </button>
                             </div>
                         </div>
 
