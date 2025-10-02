@@ -57,11 +57,11 @@ if (!isset($_SESSION['csrf_token'])) {
                                         <!-- Se llenará dinámicamente -->
                                     </div>
                                 </div>
-                                <button type="button" id="btn-consumidor-final" class="px-3 py-2 inline-flex items-center gap-x-1 text-xs font-medium rounded-lg border border-green-600 bg-green-600 text-white hover:bg-green-700 focus:outline-hidden focus:bg-green-700 dark:border-green-500 dark:bg-green-500 dark:hover:bg-green-600 whitespace-nowrap" title="Venta rápida con Consumidor Final">
+                                <button type="button" id="btn-consumidor-final" class="px-3 py-2 inline-flex items-center gap-x-2 text-xs font-medium rounded-lg border border-green-600 bg-green-600 text-white hover:bg-green-700 focus:outline-hidden focus:bg-green-700 dark:border-green-500 dark:bg-green-500 dark:hover:bg-green-600 whitespace-nowrap" title="Venta rápida con Consumidor Final">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                                     </svg>
-                                    C.Final
+                                    Consumidor Final
                                 </button>
                             </div>
                         </div>
@@ -73,6 +73,7 @@ if (!isset($_SESSION['csrf_token'])) {
                                 <option value="04">RUC</option>
                                 <option value="05" selected>Cédula</option>
                                 <option value="06">Pasaporte</option>
+                                <option value="07">Consumidor Final</option>
                                 <option value="08">ID Exterior</option>
                             </select>
                         </div>

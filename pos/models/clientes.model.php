@@ -14,8 +14,12 @@ class ClientesModel {
                            created_at, updated_at
                     FROM cliente
                     WHERE tenant_id = :tenant_id
-                    AND deleted_at IS NULL
-                    AND tipo_identificacion_sri != '07'";
+                    AND deleted_at IS NULL";
+
+            // Solo excluir Consumidor Final si NO se está buscando específicamente
+            if (!isset($filtros['tipo_identificacion']) || $filtros['tipo_identificacion'] !== '07') {
+                $sql .= " AND tipo_identificacion_sri != '07'";
+            }
 
             // Aplicar filtro de estado
             if (isset($filtros['estado']) && $filtros['estado'] !== '') {
@@ -81,8 +85,12 @@ class ClientesModel {
             $sql = "SELECT COUNT(*) as total
                     FROM cliente
                     WHERE tenant_id = :tenant_id
-                    AND deleted_at IS NULL
-                    AND tipo_identificacion_sri != '07'";
+                    AND deleted_at IS NULL";
+
+            // Solo excluir Consumidor Final si NO se está buscando específicamente
+            if (!isset($filtros['tipo_identificacion']) || $filtros['tipo_identificacion'] !== '07') {
+                $sql .= " AND tipo_identificacion_sri != '07'";
+            }
 
             if (isset($filtros['estado']) && $filtros['estado'] !== '') {
                 $sql .= " AND estado = :estado";

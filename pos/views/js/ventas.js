@@ -363,6 +363,7 @@ $(document).ready(function() {
 CARGAR CONSUMIDOR FINAL POR DEFECTO
 =============================================*/
 function cargarConsumidorFinal() {
+    console.log('📡 Iniciando carga de Consumidor Final...');
     $.ajax({
         url: 'ajax/clientes.ajax.php',
         method: 'POST',
@@ -375,15 +376,57 @@ function cargarConsumidorFinal() {
         },
         dataType: 'json',
         success: function(response) {
+            console.log('📥 Respuesta recibida:', response);
             if (response.status === 'success' && response.data.length > 0) {
-                seleccionarCliente(response.data[0]);
-                console.log('✅ Consumidor Final cargado por defecto');
+                const consumidorFinal = response.data[0];
+                console.log('👤 Consumidor Final encontrado:', consumidorFinal);
+
+                // Cargar datos en formulario
+                clienteSeleccionado = consumidorFinal;
+                $('#cliente-seleccionado-id').val(consumidorFinal.idcliente);
+                $('#cliente_tipo_identificacion_sri').val('07');
+                $('#cliente_numero_identificacion').val(consumidorFinal.numero_identificacion);
+                $('#cliente_nombres').val(consumidorFinal.nombres);
+                $('#cliente_apellidos').val(consumidorFinal.apellidos);
+                $('#cliente_email').val(consumidorFinal.email || '');
+                $('#cliente_telefono').val(consumidorFinal.telefono || '');
+                $('#cliente_direccion').val(consumidorFinal.direccion || 'Quito');
+                $('#cliente_estado').val('existente');
+
+                // Mostrar opción Consumidor Final en el select
+                $('#cliente_tipo_identificacion_sri option[value="07"]').show();
+
+                // Mostrar campos
+                console.log('🔍 Mostrando campos de cliente...');
+                $('#field-tipo-id').removeClass('hidden');
+                $('#field-numero-id').removeClass('hidden');
+                $('#field-nombres').removeClass('hidden');
+                $('#field-apellidos').removeClass('hidden');
+                $('#field-email').removeClass('hidden');
+                $('#field-telefono').removeClass('hidden');
+                $('#field-direccion').removeClass('hidden');
+                console.log('✅ Campos mostrados');
+
+                // Hacer todos los campos de solo lectura (Consumidor Final no es editable)
+                $('#cliente_tipo_identificacion_sri').prop('disabled', true);
+                $('#cliente_numero_identificacion').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
+                $('#cliente_nombres').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
+                $('#cliente_apellidos').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
+                $('#cliente_email').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
+                $('#cliente_telefono').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
+                $('#cliente_direccion').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
+
+                console.log('✅ Consumidor Final cargado (solo lectura)');
+                showNotification('✅ Consumidor Final cargado', 'success');
             } else {
                 console.warn('⚠️ No se encontró Consumidor Final en la base de datos');
+                console.warn('Respuesta completa:', response);
             }
         },
         error: function(xhr, status, error) {
-            console.error('Error al cargar Consumidor Final:', error);
+            console.error('❌ Error al cargar Consumidor Final:', error);
+            console.error('Estado:', status);
+            console.error('Respuesta completa:', xhr.responseText);
         }
     });
 }
@@ -471,6 +514,8 @@ function inicializarEventos() {
         console.log('⚡ Cargando Consumidor Final rápidamente...');
         cargarConsumidorFinal();
         $('#buscar-cliente').val(''); // Limpiar búsqueda
+        // Ocultar dropdown de resultados si está visible
+        $('#clientes-resultado').addClass('hidden');
     });
 
     // Procesar venta
@@ -1069,9 +1114,46 @@ function cargarClienteEnFormulario(cliente) {
     // Mostrar campos individuales en grid horizontal
     $('#field-tipo-id, #field-numero-id, #field-nombres, #field-apellidos, #field-email, #field-telefono, #field-direccion').removeClass('hidden');
 
-    showNotification('✅ Cliente cargado: ' + cliente.nombres + ' ' + cliente.apellidos, 'success');
+    // Si es Consumidor Final (tipo_identificacion_sri = '07'), hacer campos de solo lectura
+    if (cliente.tipo_identificacion_sri === '07') {
+        bloquearEdicionCliente();
+        // Mostrar opción Consumidor Final solo para CF
+        $('#cliente_tipo_identificacion_sri option[value="07"]').show();
+        showNotification('✅ Consumidor Final cargado (solo lectura)', 'success');
+    } else {
+        desbloquearEdicionCliente();
+        // Ocultar opción Consumidor Final para clientes normales
+        $('#cliente_tipo_identificacion_sri option[value="07"]').hide();
+        showNotification('✅ Cliente cargado: ' + cliente.nombres + ' ' + cliente.apellidos, 'success');
+    }
 
     actualizarEstadoBotones();
+}
+
+/*=============================================
+BLOQUEAR EDICIÓN DE CLIENTE (Para Consumidor Final)
+=============================================*/
+function bloquearEdicionCliente() {
+    $('#cliente_tipo_identificacion_sri').prop('disabled', true);
+    $('#cliente_numero_identificacion').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
+    $('#cliente_nombres').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
+    $('#cliente_apellidos').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
+    $('#cliente_email').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
+    $('#cliente_telefono').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
+    $('#cliente_direccion').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
+}
+
+/*=============================================
+DESBLOQUEAR EDICIÓN DE CLIENTE (Para clientes normales)
+=============================================*/
+function desbloquearEdicionCliente() {
+    $('#cliente_tipo_identificacion_sri').prop('disabled', false);
+    $('#cliente_numero_identificacion').prop('readonly', false).removeClass('bg-gray-100 cursor-not-allowed');
+    $('#cliente_nombres').prop('readonly', false).removeClass('bg-gray-100 cursor-not-allowed');
+    $('#cliente_apellidos').prop('readonly', false).removeClass('bg-gray-100 cursor-not-allowed');
+    $('#cliente_email').prop('readonly', false).removeClass('bg-gray-100 cursor-not-allowed');
+    $('#cliente_telefono').prop('readonly', false).removeClass('bg-gray-100 cursor-not-allowed');
+    $('#cliente_direccion').prop('readonly', false).removeClass('bg-gray-100 cursor-not-allowed');
 }
 
 /*=============================================
@@ -1091,16 +1173,40 @@ function mostrarFormularioCliente(termino, esNumerico, esNuevo) {
     $('#cliente_direccion').val('');
     $('#cliente_estado').val('nuevo');
 
+    // Asegurarse de que los campos sean editables (no Consumidor Final)
+    desbloquearEdicionCliente();
+
+    // Ocultar opción "Consumidor Final" para clientes normales
+    $('#cliente_tipo_identificacion_sri option[value="07"]').hide();
+
     // Pre-llenar datos según el término de búsqueda
     if (esNumerico) {
         // Es un número de identificación
         $('#cliente_numero_identificacion').val(termino);
 
-        // Auto-detectar tipo
+        // Auto-detectar tipo y validar
         if (termino.length === 10) {
-            $('#cliente_tipo_identificacion_sri').val('05'); // Cédula
+            // Validar cédula
+            if (validateCedula(termino)) {
+                $('#cliente_tipo_identificacion_sri').val('05'); // Cédula
+                console.log('✅ Cédula válida detectada');
+            } else {
+                $('#cliente_tipo_identificacion_sri').val('06'); // Pasaporte (cédula inválida)
+                console.log('⚠️ Cédula inválida - asignando Pasaporte');
+            }
         } else if (termino.length === 13) {
-            $('#cliente_tipo_identificacion_sri').val('04'); // RUC
+            // Validar RUC
+            if (validateRuc(termino)) {
+                $('#cliente_tipo_identificacion_sri').val('04'); // RUC
+                console.log('✅ RUC válido detectado');
+            } else {
+                $('#cliente_tipo_identificacion_sri').val('06'); // Pasaporte (RUC inválido)
+                console.log('⚠️ RUC inválido - asignando Pasaporte');
+            }
+        } else {
+            // Ni 10 ni 13 dígitos → Pasaporte
+            $('#cliente_tipo_identificacion_sri').val('06');
+            console.log('ℹ️ Número no corresponde a cédula/RUC - asignando Pasaporte');
         }
     } else {
         // Es un nombre/apellido

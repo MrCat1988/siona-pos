@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nEnhanced ventas module with intelligent client search\n\n- Connected client search to real database via AJAX\n- Auto-open modal when client not found (by ID or name)\n- Pre-fill modal with search term:\n  * Numeric search → fills numero_identificacion field\n  * Text search → splits into nombres/apellidos\n- Auto-detect identification type (10 digits = Cédula, 13 = RUC)\n- Smart duplicate handling: if client exists in modal, auto-select instead of error\n- Load Consumidor Final from database on initialization\n- Replaced demo data with real-time database queries\n- Added visual feedback: warning icon + \"opening form\" message\n- Improved UX for fast sales: type ID/name → auto-create if needed\n- All validations maintained (Cédula/RUC checksums, duplicates)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git checkout:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
