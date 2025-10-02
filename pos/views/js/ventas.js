@@ -1059,8 +1059,8 @@ function cargarClienteEnFormulario(cliente) {
     // Marcar como cliente existente
     $('#cliente_estado').val('existente');
 
-    // Mostrar formulario
-    $('#form-cliente-inline').removeClass('hidden');
+    // Mostrar campos individuales en grid horizontal
+    $('#field-tipo-id, #field-numero-id, #field-nombres, #field-apellidos, #field-email, #field-telefono, #field-direccion').removeClass('hidden');
 
     showNotification('✅ Cliente cargado: ' + cliente.nombres + ' ' + cliente.apellidos, 'success');
 
@@ -1114,8 +1114,8 @@ function mostrarFormularioCliente(termino, esNumerico, esNuevo) {
     // Dirección por defecto
     $('#cliente_direccion').val('Quito');
 
-    // Mostrar formulario
-    $('#form-cliente-inline').removeClass('hidden');
+    // Mostrar campos individuales en grid horizontal
+    $('#field-tipo-id, #field-numero-id, #field-nombres, #field-apellidos, #field-email, #field-telefono, #field-direccion').removeClass('hidden');
 
     // Ocultar dropdown de resultados
     $('#clientes-resultado').addClass('hidden');
@@ -1134,8 +1134,8 @@ function actualizarEstadoBotones() {
     // Validar si hay productos en el carrito
     const hayProductos = carrito.length > 0;
 
-    // Validar si el formulario de cliente está completo
-    const formularioVisible = !$('#form-cliente-inline').hasClass('hidden');
+    // Validar si los campos de cliente están visibles y completos
+    const camposVisibles = !$('#field-numero-id').hasClass('hidden');
     const numeroIdentificacion = $('#cliente_numero_identificacion').val().trim();
     const tieneNombres = $('#cliente_nombres').val().trim() !== '';
     const tieneApellidos = $('#cliente_apellidos').val().trim() !== '';
@@ -1144,7 +1144,7 @@ function actualizarEstadoBotones() {
     const identificacionValida = numeroIdentificacion !== '' &&
                                  !$('#cliente_numero_identificacion').hasClass('border-red-500');
 
-    const clienteCompleto = formularioVisible && identificacionValida && tieneNombres && tieneApellidos;
+    const clienteCompleto = camposVisibles && identificacionValida && tieneNombres && tieneApellidos;
 
     // Habilitar botones solo si hay productos Y cliente completo con identificación válida
     const habilitarBotones = hayProductos && clienteCompleto;

@@ -36,6 +36,84 @@ if (!isset($_SESSION['csrf_token'])) {
             </div>
         </div>
 
+        <!-- Customer Section - Full Width First -->
+        <div class="mb-3 sm:mb-4">
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-800 dark:border-neutral-700">
+                <div class="p-3 sm:p-4 border-b border-gray-200 dark:border-neutral-700">
+                    <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-neutral-200">Datos del Cliente</h3>
+                </div>
+                <div class="p-3 sm:p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+
+                        <!-- Búsqueda de Cliente -->
+                        <div class="md:col-span-2 lg:col-span-1">
+                            <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Buscar por ID o Nombre</label>
+                            <div class="relative">
+                                <input type="text" id="buscar-cliente" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Ej: 1721234567 o Juan Pérez">
+                                <input type="hidden" id="cliente-seleccionado-id" value="">
+                                <!-- Dropdown de resultados -->
+                                <div id="clientes-resultado" class="hidden absolute z-10 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-neutral-800 dark:border-neutral-700">
+                                    <!-- Se llenará dinámicamente -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tipo de Identificación -->
+                        <div id="field-tipo-id" class="hidden">
+                            <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Tipo ID <span class="text-red-500">*</span></label>
+                            <select id="cliente_tipo_identificacion_sri" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white">
+                                <option value="04">RUC</option>
+                                <option value="05" selected>Cédula</option>
+                                <option value="06">Pasaporte</option>
+                                <option value="08">ID Exterior</option>
+                            </select>
+                        </div>
+
+                        <!-- Número de Identificación -->
+                        <div id="field-numero-id" class="hidden">
+                            <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Nro. Identificación <span class="text-red-500">*</span></label>
+                            <input type="text" id="cliente_numero_identificacion" maxlength="13" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Ej: 1721234567">
+                            <div id="cliente_error_identificacion" class="hidden mt-1 text-xs text-red-600"></div>
+                        </div>
+
+                        <!-- Nombres -->
+                        <div id="field-nombres" class="hidden">
+                            <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Nombres <span class="text-red-500">*</span></label>
+                            <input type="text" id="cliente_nombres" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Ej: Juan Carlos">
+                        </div>
+
+                        <!-- Apellidos -->
+                        <div id="field-apellidos" class="hidden">
+                            <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Apellidos <span class="text-red-500">*</span></label>
+                            <input type="text" id="cliente_apellidos" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Ej: Pérez García">
+                        </div>
+
+                        <!-- Email -->
+                        <div id="field-email" class="hidden">
+                            <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Email</label>
+                            <input type="email" id="cliente_email" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="ejemplo@correo.com">
+                        </div>
+
+                        <!-- Teléfono -->
+                        <div id="field-telefono" class="hidden">
+                            <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Teléfono</label>
+                            <input type="text" id="cliente_telefono" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="0987654321">
+                        </div>
+
+                        <!-- Dirección -->
+                        <div id="field-direccion" class="hidden md:col-span-2 lg:col-span-1">
+                            <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Dirección</label>
+                            <input type="text" id="cliente_direccion" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Av. Principal 123">
+                        </div>
+
+                        <!-- Estado del cliente (nuevo/existente) -->
+                        <input type="hidden" id="cliente_estado" value="nuevo">
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Sales Interface -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
 
@@ -118,87 +196,8 @@ if (!isset($_SESSION['csrf_token'])) {
 
             </div>
 
-            <!-- Right Panel - Customer Info & Totals -->
+            <!-- Right Panel - Payment & Totals -->
             <div class="space-y-3 sm:space-y-4">
-
-                <!-- Customer Section -->
-                <div class="bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-800 dark:border-neutral-700">
-                    <div class="p-3 sm:p-4 border-b border-gray-200 dark:border-neutral-700">
-                        <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-neutral-200">Datos del Cliente</h3>
-                    </div>
-                    <div class="p-3 sm:p-4 space-y-3">
-
-                        <!-- Búsqueda de Cliente -->
-                        <div>
-                            <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Buscar por ID o Nombre</label>
-                            <div class="relative">
-                                <input type="text" id="buscar-cliente" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Ej: 1721234567 o Juan Pérez">
-                                <input type="hidden" id="cliente-seleccionado-id" value="">
-                                <!-- Dropdown de resultados -->
-                                <div id="clientes-resultado" class="hidden absolute z-10 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-neutral-800 dark:border-neutral-700">
-                                    <!-- Se llenará dinámicamente -->
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Formulario de Cliente (Se muestra/oculta dinámicamente) -->
-                        <div id="form-cliente-inline" class="space-y-3 hidden">
-
-                            <!-- Tipo de Identificación -->
-                            <div>
-                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Tipo Identificación <span class="text-red-500">*</span></label>
-                                <select id="cliente_tipo_identificacion_sri" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white">
-                                    <option value="04">RUC</option>
-                                    <option value="05" selected>Cédula</option>
-                                    <option value="06">Pasaporte</option>
-                                    <option value="08">Identificación del Exterior</option>
-                                </select>
-                            </div>
-
-                            <!-- Número de Identificación -->
-                            <div>
-                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Número Identificación <span class="text-red-500">*</span></label>
-                                <input type="text" id="cliente_numero_identificacion" maxlength="13" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Ej: 1721234567">
-                                <div id="cliente_error_identificacion" class="hidden mt-1 text-xs text-red-600"></div>
-                            </div>
-
-                            <!-- Nombres -->
-                            <div>
-                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Nombres <span class="text-red-500">*</span></label>
-                                <input type="text" id="cliente_nombres" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Ej: Juan Carlos">
-                            </div>
-
-                            <!-- Apellidos -->
-                            <div>
-                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Apellidos <span class="text-red-500">*</span></label>
-                                <input type="text" id="cliente_apellidos" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Ej: Pérez García">
-                            </div>
-
-                            <!-- Email -->
-                            <div>
-                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Email</label>
-                                <input type="email" id="cliente_email" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="ejemplo@correo.com">
-                            </div>
-
-                            <!-- Teléfono -->
-                            <div>
-                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Teléfono</label>
-                                <input type="text" id="cliente_telefono" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="0987654321">
-                            </div>
-
-                            <!-- Dirección -->
-                            <div>
-                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Dirección</label>
-                                <textarea id="cliente_direccion" rows="2" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Av. Principal 123"></textarea>
-                            </div>
-
-                            <!-- Estado del cliente (nuevo/existente) -->
-                            <input type="hidden" id="cliente_estado" value="nuevo">
-
-                        </div>
-
-                    </div>
-                </div>
 
                 <!-- Payment Method -->
                 <div class="bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-800 dark:border-neutral-700">
