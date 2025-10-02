@@ -3,6 +3,11 @@ MÓDULO DE EMPRESA
 =============================================*/
 
 $(document).ready(function() {
+    // Solo ejecutar en la página de empresa
+    if (!window.location.href.includes('empresa')) {
+        return; // Salir si no estamos en la página de empresa
+    }
+
     // Cargar información de la empresa al cargar la página
     cargarEmpresa();
 

@@ -217,12 +217,18 @@ if (!isset($_SESSION['csrf_token'])) {
                             <label for="tipo_identificacion_sri" class="block text-sm font-medium mb-2 dark:text-white">
                                 Tipo de Identificación <span class="text-red-500">*</span>
                             </label>
+                            <!-- Select para modo crear -->
                             <select id="tipo_identificacion_sri" name="tipo_identificacion_sri" required class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">
                                 <option value="04">RUC</option>
                                 <option value="05" selected>Cédula</option>
                                 <option value="06">Pasaporte</option>
                                 <option value="08">Identificación del Exterior</option>
                             </select>
+                            <!-- Span para modo editar (solo lectura) -->
+                            <div id="tipo_identificacion_readonly" class="hidden py-3 px-4 block w-full border-gray-200 rounded-lg text-sm bg-gray-100 dark:bg-neutral-800 dark:border-neutral-700">
+                                <span class="text-gray-700 dark:text-gray-300 font-semibold" id="tipo_identificacion_display"></span>
+                                <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">(No editable)</span>
+                            </div>
                         </div>
 
                         <!-- Número de identificación -->
@@ -230,7 +236,13 @@ if (!isset($_SESSION['csrf_token'])) {
                             <label for="numero_identificacion" class="block text-sm font-medium mb-2 dark:text-white">
                                 Número de Identificación <span class="text-red-500">*</span>
                             </label>
+                            <!-- Input para modo crear -->
                             <input type="text" id="numero_identificacion" name="numero_identificacion" required maxlength="13" class="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" placeholder="Ej: 1234567890">
+                            <!-- Span para modo editar (solo lectura) -->
+                            <div id="numero_identificacion_readonly" class="hidden py-3 px-4 block w-full border-gray-200 rounded-lg text-sm bg-gray-100 dark:bg-neutral-800 dark:border-neutral-700">
+                                <span class="text-gray-700 dark:text-gray-300 font-semibold" id="numero_identificacion_display"></span>
+                                <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">(No editable)</span>
+                            </div>
                         </div>
 
                         <!-- Nombres -->

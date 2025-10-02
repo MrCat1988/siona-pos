@@ -1,3 +1,4 @@
+<?php  $version = VersionController::version(); ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -6,12 +7,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./../dist/css/output.css">
     <!-- DATATABLE CSS -->
-    <link rel="stylesheet" href="./../node_modules/datatables.net-dt/css/dataTables.dataTables.min.css">
+    <link rel="stylesheet" href="./../node_modules/datatables.net-dt/css/dataTables.dataTables.min.css?v=<?=$version?>">
     <!-- <link rel="stylesheet" href="./../node_modules/datatables.net-responsive-dt/css/responsive.dataTables.min.css"> -->
 
     <?php if (isset($_GET["route"]) && $_GET["route"] == 'productos'): ?>
     <!-- PRODUCTOS CSS -->
-    <link rel="stylesheet" href="views/css/productos.css">
+    <link rel="stylesheet" href="views/css/productos.css?v=<?=$version?>">
     <?php endif; ?>
 
 
@@ -508,14 +509,14 @@
         window.currentUserId = <?php echo json_encode($_SESSION['usuario_id'] ?? null); ?>;
         window.currentUserEmail = <?php echo json_encode($_SESSION['usuario_email'] ?? null); ?>;
     </script>
-    <script src="./views/js/usuarios.js"></script>
-    <script src="./views/js/sucursales.js"></script>
-    <script src="./views/js/categorias.js"></script>
-    <script src="./views/js/productos.js"></script>
-    <script src="./views/js/producto-sucursal.js"></script>
-    <script src="./views/js/punto-de-emision.js"></script>
-    <script src="./views/js/empresa.js"></script>
-    <script src="./views/js/clientes.js"></script>
+    <script src="./views/js/usuarios.js?v=<?=$version?>"></script>
+    <script src="./views/js/sucursales.js?v=<?=$version?>"></script>
+    <script src="./views/js/categorias.js?v=<?=$version?>"></script>
+    <script src="./views/js/productos.js?v=<?=$version?>"></script>
+    <script src="./views/js/producto-sucursal.js?v=<?=$version?>"></script>
+    <script src="./views/js/punto-de-emision.js?v=<?=$version?>"></script>
+    <script src="./views/js/empresa.js?v=<?=$version?>"></script>
+    <script src="./views/js/clientes.js?v=<?=$version?>"></script>
 
 </body>
 

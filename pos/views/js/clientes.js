@@ -228,11 +228,6 @@ function mostrarClientes(clientes) {
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                 </svg>
                             </button>
-                            <button onclick="eliminarCliente(${cliente.idcliente}, '${nombreCompleto}')" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors" title="Eliminar">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                </svg>
-                            </button>
                         ` : `
                             <span class="text-xs text-gray-400 dark:text-gray-500 italic">Cliente del sistema</span>
                         `}
@@ -328,6 +323,12 @@ function abrirModalNuevoCliente() {
     $('#idcliente').val('');
     $('#estado').prop('checked', true);
 
+    // Modo crear: Mostrar select e input, ocultar spans readonly
+    $('#tipo_identificacion_sri').show().attr('required', 'required');
+    $('#tipo_identificacion_readonly').addClass('hidden');
+    $('#numero_identificacion').show().attr('required', 'required');
+    $('#numero_identificacion_readonly').addClass('hidden');
+
     // Limpiar estilos de validación
     $('#numero_identificacion, #nombres, #apellidos').removeClass('border-red-500 border-green-500');
     $('#numero_identificacion').parent().find('.error-message, .error-duplicado').remove();
@@ -355,8 +356,17 @@ function editarCliente(idcliente) {
                 $('#btn-guardar-texto').text('Actualizar Cliente');
                 $('#accion-modal').val('editar');
                 $('#idcliente').val(cliente.idcliente);
-                $('#tipo_identificacion_sri').val(cliente.tipo_identificacion_sri);
-                $('#numero_identificacion').val(cliente.numero_identificacion);
+
+                // Modo edición: Ocultar select de tipo y mostrar span readonly
+                $('#tipo_identificacion_sri').hide().removeAttr('required').val(cliente.tipo_identificacion_sri);
+                $('#tipo_identificacion_readonly').removeClass('hidden');
+                $('#tipo_identificacion_display').text(obtenerTextoCompletoTipoIdentificacion(cliente.tipo_identificacion_sri));
+
+                // Modo edición: Ocultar input de número y mostrar span readonly
+                $('#numero_identificacion').hide().removeAttr('required').val(cliente.numero_identificacion);
+                $('#numero_identificacion_readonly').removeClass('hidden');
+                $('#numero_identificacion_display').text(cliente.numero_identificacion);
+
                 $('#nombres').val(cliente.nombres);
                 $('#apellidos').val(cliente.apellidos);
                 $('#email').val(cliente.email);
@@ -365,17 +375,10 @@ function editarCliente(idcliente) {
                 $('#estado').prop('checked', cliente.estado == 1);
 
                 // Limpiar estilos de validación
-                $('#numero_identificacion, #nombres, #apellidos').removeClass('border-red-500 border-green-500');
-                $('#numero_identificacion').parent().find('.error-message, .error-duplicado').remove();
+                $('#nombres, #apellidos').removeClass('border-red-500 border-green-500');
 
                 // Abrir modal con Preline
                 window.HSOverlay.open('#modal-cliente');
-
-                // Validar el número de identificación cargado
-                setTimeout(function() {
-                    validarNumeroIdentificacion();
-                    // NO verificar duplicado al cargar para edición (el registro actual es válido)
-                }, 100);
             } else {
                 showNotification(response.message, 'error');
             }
@@ -410,29 +413,33 @@ function guardarCliente() {
         return;
     }
 
-    // Validar número de identificación (obligatorio)
-    const tipo = $('#tipo_identificacion_sri').val();
-    const numero = $('#numero_identificacion').val().trim();
+    // Validar número de identificación (solo en modo crear)
+    const accion = $('#accion-modal').val();
 
-    if (numero === '') {
-        showNotification('El número de identificación es obligatorio', 'error');
-        $('#numero_identificacion').addClass('border-red-500').focus();
-        return;
-    }
+    if (accion === 'crear') {
+        const tipo = $('#tipo_identificacion_sri').val();
+        const numero = $('#numero_identificacion').val().trim();
 
-    // Validar estructura según el tipo (Cédula o RUC)
-    if (tipo === '05' || tipo === '04') {
-        if (!validarNumeroIdentificacion()) {
-            showNotification('Por favor, corrija el número de identificación antes de continuar', 'error');
+        if (numero === '') {
+            showNotification('El número de identificación es obligatorio', 'error');
+            $('#numero_identificacion').addClass('border-red-500').focus();
             return;
         }
-    }
 
-    // Verificar si existe mensaje de error de duplicado
-    if ($('#numero_identificacion').parent().find('.error-duplicado').length > 0) {
-        showNotification('Este número de identificación ya está registrado. Por favor, use uno diferente.', 'error');
-        $('#numero_identificacion').focus();
-        return;
+        // Validar estructura según el tipo (Cédula o RUC)
+        if (tipo === '05' || tipo === '04') {
+            if (!validarNumeroIdentificacion()) {
+                showNotification('Por favor, corrija el número de identificación antes de continuar', 'error');
+                return;
+            }
+        }
+
+        // Verificar si existe mensaje de error de duplicado
+        if ($('#numero_identificacion').parent().find('.error-duplicado').length > 0) {
+            showNotification('Este número de identificación ya está registrado. Por favor, use uno diferente.', 'error');
+            $('#numero_identificacion').focus();
+            return;
+        }
     }
 
     // Establecer dirección por defecto si está vacía
@@ -443,7 +450,6 @@ function guardarCliente() {
     }
 
     const formData = new FormData($('#form-cliente')[0]);
-    const accion = $('#accion-modal').val();
 
     formData.append('accion', accion === 'crear' ? 'crear_cliente' : 'actualizar_cliente');
     formData.set('estado', $('#estado').is(':checked') ? 1 : 0);
@@ -487,35 +493,6 @@ function guardarCliente() {
     });
 }
 
-/*=============================================
-ELIMINAR CLIENTE
-=============================================*/
-function eliminarCliente(idcliente, nombre) {
-    if (confirm(`¿Está seguro que desea eliminar al cliente "${nombre}"?\n\nEsta acción no se puede deshacer.`)) {
-        $.ajax({
-            url: 'ajax/clientes.ajax.php',
-            method: 'POST',
-            data: {
-                accion: 'eliminar_cliente',
-                idcliente: idcliente,
-                csrf_token: $('input[name="csrf_token"]').val()
-            },
-            dataType: 'json',
-            success: function(response) {
-                if (response.status === 'success') {
-                    showNotification(response.message, 'success');
-                    cargarClientes();
-                } else {
-                    showNotification(response.message, 'error');
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Error al eliminar cliente:', error);
-                showNotification('Error al eliminar el cliente', 'error');
-            }
-        });
-    }
-}
 
 /*=============================================
 OBTENER TEXTO DE TIPO DE IDENTIFICACIÓN
@@ -527,6 +504,20 @@ function obtenerTextoTipoIdentificacion(codigo) {
         '06': 'PAS',
         '07': 'CF',
         '08': 'IDE'
+    };
+    return tipos[codigo] || codigo;
+}
+
+/*=============================================
+OBTENER TEXTO COMPLETO DE TIPO DE IDENTIFICACIÓN
+=============================================*/
+function obtenerTextoCompletoTipoIdentificacion(codigo) {
+    const tipos = {
+        '04': 'RUC',
+        '05': 'Cédula',
+        '06': 'Pasaporte',
+        '07': 'Consumidor Final',
+        '08': 'Identificación del Exterior'
     };
     return tipos[codigo] || codigo;
 }

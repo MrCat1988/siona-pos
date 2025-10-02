@@ -816,12 +816,6 @@ function showToast(toastHtml) {
     };
 
     // Inicializar componentes cuando el DOM esté listo
-    console.log('Inicializando categorías...', {
-        tenantId: window.TENANT_ID,
-        location: window.location.href,
-        includes: window.location.href.includes('categorias')
-    });
-
     if (window.TENANT_ID && window.location.href.includes('categorias')) {
         console.log('✅ Inicializando CategoriasManager...');
         CategoriasManager.init();
@@ -831,12 +825,8 @@ function showToast(toastHtml) {
 
         // Inicializar FormEditarCategoria inmediatamente
         FormEditarCategoria.init();
-    } else {
-        console.log('❌ No se puede inicializar categorías:', {
-            tenantId: window.TENANT_ID,
-            isCategoriasPage: window.location.href.includes('categorias')
-        });
     }
+    // Inicialización omitida (no está en página de categorías)
 
     // Event handlers para los modales
     // Botón Editar Categoría en las cards

@@ -1151,9 +1151,8 @@ $(document).ready(function() {
                 console.log('GLOBAL: Detectado submit del formulario agregar sucursal');
             }
         });
-    } else {
-        console.log('Inicialización omitida - TENANT_ID:', window.TENANT_ID, 'URL includes sucursales:', window.location.href.includes('sucursales'));
     }
+    // Inicialización omitida (no está en página de sucursales)
 
     // Reset del formulario cuando se cierre el modal de agregar
     $(document).on('hidden.hs.overlay', '#modal-agregar-sucursal', function() {
