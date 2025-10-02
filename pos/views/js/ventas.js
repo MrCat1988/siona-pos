@@ -1044,9 +1044,15 @@ MOSTRAR FORMULARIO PARA NUEVO CLIENTE
 function mostrarFormularioCliente(termino, esNumerico, esNuevo) {
     console.log('📝 Mostrando formulario para nuevo cliente');
 
-    // Limpiar formulario
-    $('#form-cliente-inline')[0].reset();
+    // Limpiar formulario manualmente (no es un <form>, es un <div>)
     $('#cliente-seleccionado-id').val('');
+    $('#cliente_tipo_identificacion_sri').val('05');
+    $('#cliente_numero_identificacion').val('');
+    $('#cliente_nombres').val('');
+    $('#cliente_apellidos').val('');
+    $('#cliente_email').val('');
+    $('#cliente_telefono').val('');
+    $('#cliente_direccion').val('');
     $('#cliente_estado').val('nuevo');
 
     // Pre-llenar datos según el término de búsqueda
