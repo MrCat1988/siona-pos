@@ -432,11 +432,8 @@ function inicializarEventos() {
         }
     });
 
-    // Cambiar cliente
-    $('#btn-cambiar-cliente').on('click', function() {
-        $('#cliente-info').addClass('hidden');
-        $('#buscar-cliente').val('').focus();
-        clienteSeleccionado = null;
+    // Actualizar botones cuando cambia el formulario de cliente
+    $('#cliente_numero_identificacion, #cliente_nombres, #cliente_apellidos').on('input', function() {
         actualizarEstadoBotones();
     });
 
