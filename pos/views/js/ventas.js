@@ -467,18 +467,39 @@ function inicializarEventos() {
 }
 
 /*=============================================
-BUSCAR PRODUCTOS
+BUSCAR PRODUCTOS EN BASE DE DATOS
 =============================================*/
 function buscarProductos(termino) {
     console.log('🔍 Buscando productos:', termino);
 
-    // Filtrar productos demo
-    const resultados = productosDemo.filter(producto => {
-        const textoCompleto = `${producto.codigo} ${producto.codigo_auxiliar} ${producto.descripcion}`.toLowerCase();
-        return textoCompleto.includes(termino.toLowerCase());
-    });
+    // Buscar en base de datos real
+    $.ajax({
+        url: 'ajax/producto-sucursal.ajax.php',
+        method: 'POST',
+        data: {
+            accion: 'obtener_productos_sucursal',
+            busqueda: termino,
+            estado: 1, // Solo productos activos
+            limite: 20 // Limitar resultados para búsqueda rápida
+        },
+        dataType: 'json',
+        success: function(response) {
+            console.log('📦 Productos encontrados:', response);
 
-    mostrarResultadosProductos(resultados);
+            if (response.success && response.data && response.data.length > 0) {
+                // Filtrar productos con stock disponible
+                const productosConStock = response.data.filter(p => p.stock_actual > 0);
+                mostrarResultadosProductos(productosConStock);
+            } else {
+                mostrarResultadosProductos([]);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error al buscar productos:', error);
+            showNotification('Error al buscar productos', 'error');
+            mostrarResultadosProductos([]);
+        }
+    });
 }
 
 /*=============================================
