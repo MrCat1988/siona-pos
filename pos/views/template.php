@@ -60,6 +60,7 @@
                 $_GET["route"] == 'punto-de-emision' ||
                 $_GET["route"] == 'empresa' ||
                 $_GET["route"] == 'clientes' ||
+                $_GET["route"] == 'ventas' ||
                 $_GET["route"] == 'content'
 
 
@@ -517,6 +518,7 @@
     <script src="./views/js/punto-de-emision.js?v=<?=$version?>"></script>
     <script src="./views/js/empresa.js?v=<?=$version?>"></script>
     <script src="./views/js/clientes.js?v=<?=$version?>"></script>
+    <script src="./views/js/ventas.js?v=<?=$version?>"></script>
 
 </body>
 
