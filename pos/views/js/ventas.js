@@ -352,12 +352,41 @@ const clientesDemo = [
 $(document).ready(function() {
     console.log('🛒 Módulo de Ventas inicializado');
 
-    // Inicializar con Consumidor Final por defecto
-    seleccionarCliente(clientesDemo[0]);
+    // Cargar Consumidor Final desde base de datos
+    cargarConsumidorFinal();
 
     // Event Listeners
     inicializarEventos();
 });
+
+/*=============================================
+CARGAR CONSUMIDOR FINAL POR DEFECTO
+=============================================*/
+function cargarConsumidorFinal() {
+    $.ajax({
+        url: 'ajax/clientes.ajax.php',
+        method: 'POST',
+        data: {
+            accion: 'obtener_clientes',
+            csrf_token: $('input[name="csrf_token"]').val(),
+            tipo_identificacion: '07', // Consumidor Final
+            estado: 1,
+            limit: 1
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success' && response.data.length > 0) {
+                seleccionarCliente(response.data[0]);
+                console.log('✅ Consumidor Final cargado por defecto');
+            } else {
+                console.warn('⚠️ No se encontró Consumidor Final en la base de datos');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error al cargar Consumidor Final:', error);
+        }
+    });
+}
 
 /*=============================================
 INICIALIZAR EVENTOS
@@ -816,18 +845,126 @@ function calcularTotales() {
 }
 
 /*=============================================
-BUSCAR CLIENTES
+BUSCAR CLIENTES EN BASE DE DATOS
 =============================================*/
 function buscarClientes(termino) {
     console.log('🔍 Buscando clientes:', termino);
 
-    // Filtrar clientes demo
-    const resultados = clientesDemo.filter(cliente => {
-        const textoCompleto = `${cliente.nombres} ${cliente.apellidos} ${cliente.numero_identificacion}`.toLowerCase();
-        return textoCompleto.includes(termino.toLowerCase());
-    });
+    // Buscar en base de datos real
+    $.ajax({
+        url: 'ajax/clientes.ajax.php',
+        method: 'POST',
+        data: {
+            accion: 'obtener_clientes',
+            csrf_token: $('input[name="csrf_token"]').val(),
+            busqueda: termino,
+            estado: 1, // Solo clientes activos
+            limit: 10 // Limitar resultados para búsqueda rápida
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success' && response.data.length > 0) {
+                // Se encontraron clientes
+                mostrarResultadosClientes(response.data);
+            } else {
+                // NO se encontraron clientes
+                // Verificar si el término parece ser un número de identificación o nombre
+                const esNumerico = /^\d+$/.test(termino);
+                const esTexto = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(termino);
 
-    mostrarResultadosClientes(resultados);
+                if (esNumerico || esTexto) {
+                    // Auto-abrir modal para crear nuevo cliente
+                    console.log('⚠️ Cliente no encontrado. Abriendo modal de creación...');
+                    mostrarMensajeNoEncontrado(termino, esNumerico);
+
+                    // Esperar 1 segundo antes de abrir el modal
+                    setTimeout(function() {
+                        abrirModalConDatos(termino, esNumerico);
+                    }, 1000);
+                } else {
+                    mostrarResultadosClientes([]);
+                }
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error al buscar clientes:', error);
+            showNotification('Error al buscar clientes', 'error');
+        }
+    });
+}
+
+/*=============================================
+MOSTRAR MENSAJE CUANDO NO SE ENCUENTRA CLIENTE
+=============================================*/
+function mostrarMensajeNoEncontrado(termino, esNumerico) {
+    const container = $('#clientes-resultado');
+    const mensaje = esNumerico
+        ? `No se encontró ningún cliente con identificación <strong>${termino}</strong>`
+        : `No se encontró ningún cliente con el nombre <strong>${termino}</strong>`;
+
+    container.html(`
+        <div class="p-4 text-center">
+            <div class="flex flex-col items-center gap-2">
+                <svg class="w-12 h-12 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <p class="text-gray-700 dark:text-gray-300">${mensaje}</p>
+                <p class="text-sm text-blue-600 dark:text-blue-400 font-medium animate-pulse">
+                    🚀 Abriendo formulario para crear cliente...
+                </p>
+            </div>
+        </div>
+    `).removeClass('hidden');
+}
+
+/*=============================================
+ABRIR MODAL CON DATOS PRELLENADOS
+=============================================*/
+function abrirModalConDatos(termino, esNumerico) {
+    // Limpiar formulario primero
+    $('#form-nuevo-cliente-venta')[0].reset();
+    $('#venta_numero_identificacion').removeClass('border-red-500 border-green-500');
+    $('#venta_error_identificacion, #venta_error_duplicado').addClass('hidden');
+
+    // Prellenar datos según el tipo de búsqueda
+    if (esNumerico) {
+        // Es un número de identificación
+        $('#venta_numero_identificacion').val(termino);
+
+        // Auto-detectar tipo
+        if (termino.length === 10) {
+            $('#venta_tipo_identificacion_sri').val('05'); // Cédula
+        } else if (termino.length === 13) {
+            $('#venta_tipo_identificacion_sri').val('04'); // RUC
+        }
+
+        actualizarPlaceholderVenta();
+        validarNumeroIdentificacionVenta();
+        verificarDuplicadoVenta();
+    } else {
+        // Es un nombre/apellido
+        // Intentar separar en nombre y apellido
+        const palabras = termino.trim().split(/\s+/);
+
+        if (palabras.length === 1) {
+            // Solo una palabra - asumir que es apellido
+            $('#venta_apellidos').val(termino);
+        } else {
+            // Múltiples palabras - primera mitad nombres, segunda mitad apellidos
+            const mitad = Math.ceil(palabras.length / 2);
+            const nombres = palabras.slice(0, mitad).join(' ');
+            const apellidos = palabras.slice(mitad).join(' ');
+
+            $('#venta_nombres').val(nombres);
+            $('#venta_apellidos').val(apellidos);
+        }
+    }
+
+    // Abrir modal
+    window.HSOverlay.open('#modal-nuevo-cliente-venta');
+
+    // Ocultar dropdown de resultados
+    $('#clientes-resultado').addClass('hidden');
 }
 
 /*=============================================
@@ -964,7 +1101,7 @@ LIMPIAR VENTA
 =============================================*/
 function limpiarVenta() {
     limpiarCarrito();
-    seleccionarCliente(clientesDemo[0]); // Volver a Consumidor Final
+    cargarConsumidorFinal(); // Volver a Consumidor Final
     $('#metodo-pago').val('01');
     console.log('✨ Venta limpiada - Lista para nueva venta');
 }
@@ -1293,9 +1430,10 @@ function guardarNuevoClienteVenta() {
         return;
     }
 
-    // Verificar si hay error de duplicado visible
+    // CAMBIO: Si hay duplicado, buscar y seleccionar el cliente existente
     if (!$('#venta_error_duplicado').hasClass('hidden')) {
-        showNotification('Este número de identificación ya está registrado', 'error');
+        console.log('ℹ️ Cliente ya existe. Buscando y seleccionando...');
+        buscarYSeleccionarClienteExistente(numeroIdentificacion);
         return;
     }
 
@@ -1345,6 +1483,47 @@ function guardarNuevoClienteVenta() {
         error: function(xhr, status, error) {
             console.error('Error al crear cliente:', error);
             showNotification('Error al crear el cliente', 'error');
+        }
+    });
+}
+
+/*=============================================
+BUSCAR Y SELECCIONAR CLIENTE EXISTENTE
+=============================================*/
+function buscarYSeleccionarClienteExistente(numeroIdentificacion) {
+    console.log('🔍 Buscando cliente existente con identificación:', numeroIdentificacion);
+
+    $.ajax({
+        url: 'ajax/clientes.ajax.php',
+        method: 'POST',
+        data: {
+            accion: 'obtener_clientes',
+            csrf_token: $('input[name="csrf_token"]').val(),
+            busqueda: numeroIdentificacion,
+            estado: 1,
+            limit: 1
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success' && response.data.length > 0) {
+                const clienteExistente = response.data[0];
+
+                // Cerrar modal
+                window.HSOverlay.close('#modal-nuevo-cliente-venta');
+
+                // Seleccionar el cliente existente
+                seleccionarCliente(clienteExistente);
+
+                showNotification('✅ Cliente encontrado y seleccionado: ' + clienteExistente.nombres + ' ' + clienteExistente.apellidos, 'success');
+
+                console.log('✅ Cliente existente seleccionado:', clienteExistente);
+            } else {
+                showNotification('No se pudo encontrar el cliente', 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error al buscar cliente:', error);
+            showNotification('Error al buscar el cliente', 'error');
         }
     });
 }
