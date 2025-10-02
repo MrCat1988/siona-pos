@@ -888,23 +888,10 @@ function buscarClientes(termino) {
                 // Se encontraron clientes
                 mostrarResultadosClientes(response.data);
             } else {
-                // NO se encontraron clientes
-                // Verificar si el término parece ser un número de identificación o nombre
+                // NO se encontraron clientes - Mostrar inputs para crear
+                console.log('⚠️ Cliente no encontrado. Mostrando formulario...');
                 const esNumerico = /^\d+$/.test(termino);
-                const esTexto = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(termino);
-
-                if (esNumerico || esTexto) {
-                    // Auto-abrir modal para crear nuevo cliente
-                    console.log('⚠️ Cliente no encontrado. Abriendo modal de creación...');
-                    mostrarMensajeNoEncontrado(termino, esNumerico);
-
-                    // Esperar 1 segundo antes de abrir el modal
-                    setTimeout(function() {
-                        abrirModalConDatos(termino, esNumerico);
-                    }, 1000);
-                } else {
-                    mostrarResultadosClientes([]);
-                }
+                mostrarFormularioCliente(termino, esNumerico, true); // true = nuevo cliente
             }
         },
         error: function(xhr, status, error) {
@@ -1019,26 +1006,92 @@ function mostrarResultadosClientes(clientes) {
     // Event listener para seleccionar cliente
     $('.cliente-item').on('click', function() {
         const cliente = JSON.parse($(this).attr('data-cliente'));
-        seleccionarCliente(cliente);
+        cargarClienteEnFormulario(cliente);
         $('#buscar-cliente').val('');
         $('#clientes-resultado').addClass('hidden');
     });
 }
 
 /*=============================================
-SELECCIONAR CLIENTE
+CARGAR CLIENTE EN FORMULARIO (Cliente Existente)
 =============================================*/
-function seleccionarCliente(cliente) {
-    console.log('👤 Cliente seleccionado:', cliente);
+function cargarClienteEnFormulario(cliente) {
+    console.log('👤 Cargando cliente en formulario:', cliente);
 
     clienteSeleccionado = cliente;
 
+    // Llenar campos del formulario
     $('#cliente-seleccionado-id').val(cliente.idcliente);
-    $('#cliente-nombre').text(`${cliente.nombres} ${cliente.apellidos}`);
-    $('#cliente-identificacion').text(cliente.numero_identificacion);
-    $('#cliente-email').text(cliente.email || 'Sin email');
-    $('#cliente-info').removeClass('hidden');
+    $('#cliente_tipo_identificacion_sri').val(cliente.tipo_identificacion_sri);
+    $('#cliente_numero_identificacion').val(cliente.numero_identificacion);
+    $('#cliente_nombres').val(cliente.nombres);
+    $('#cliente_apellidos').val(cliente.apellidos);
+    $('#cliente_email').val(cliente.email || '');
+    $('#cliente_telefono').val(cliente.telefono || '');
+    $('#cliente_direccion').val(cliente.direccion || 'Quito');
 
+    // Marcar como cliente existente
+    $('#cliente_estado').val('existente');
+
+    // Mostrar formulario
+    $('#form-cliente-inline').removeClass('hidden');
+
+    showNotification('✅ Cliente cargado: ' + cliente.nombres + ' ' + cliente.apellidos, 'success');
+
+    actualizarEstadoBotones();
+}
+
+/*=============================================
+MOSTRAR FORMULARIO PARA NUEVO CLIENTE
+=============================================*/
+function mostrarFormularioCliente(termino, esNumerico, esNuevo) {
+    console.log('📝 Mostrando formulario para nuevo cliente');
+
+    // Limpiar formulario
+    $('#form-cliente-inline')[0].reset();
+    $('#cliente-seleccionado-id').val('');
+    $('#cliente_estado').val('nuevo');
+
+    // Pre-llenar datos según el término de búsqueda
+    if (esNumerico) {
+        // Es un número de identificación
+        $('#cliente_numero_identificacion').val(termino);
+
+        // Auto-detectar tipo
+        if (termino.length === 10) {
+            $('#cliente_tipo_identificacion_sri').val('05'); // Cédula
+        } else if (termino.length === 13) {
+            $('#cliente_tipo_identificacion_sri').val('04'); // RUC
+        }
+    } else {
+        // Es un nombre/apellido
+        const palabras = termino.trim().split(/\s+/);
+
+        if (palabras.length === 1) {
+            $('#cliente_apellidos').val(termino);
+        } else {
+            const mitad = Math.ceil(palabras.length / 2);
+            const nombres = palabras.slice(0, mitad).join(' ');
+            const apellidos = palabras.slice(mitad).join(' ');
+
+            $('#cliente_nombres').val(nombres);
+            $('#cliente_apellidos').val(apellidos);
+        }
+    }
+
+    // Dirección por defecto
+    $('#cliente_direccion').val('Quito');
+
+    // Mostrar formulario
+    $('#form-cliente-inline').removeClass('hidden');
+
+    // Ocultar dropdown de resultados
+    $('#clientes-resultado').addClass('hidden');
+
+    showNotification('ℹ️ Cliente no encontrado. Complete los datos para crear uno nuevo.', 'info');
+
+    // Limpiar cliente seleccionado (se creará al procesar venta)
+    clienteSeleccionado = null;
     actualizarEstadoBotones();
 }
 
@@ -1046,7 +1099,19 @@ function seleccionarCliente(cliente) {
 ACTUALIZAR ESTADO DE BOTONES
 =============================================*/
 function actualizarEstadoBotones() {
-    const habilitarBotones = carrito.length > 0 && clienteSeleccionado !== null;
+    // Validar si hay productos en el carrito
+    const hayProductos = carrito.length > 0;
+
+    // Validar si el formulario de cliente está completo
+    const formularioVisible = !$('#form-cliente-inline').hasClass('hidden');
+    const tieneIdentificacion = $('#cliente_numero_identificacion').val().trim() !== '';
+    const tieneNombres = $('#cliente_nombres').val().trim() !== '';
+    const tieneApellidos = $('#cliente_apellidos').val().trim() !== '';
+
+    const clienteCompleto = formularioVisible && tieneIdentificacion && tieneNombres && tieneApellidos;
+
+    // Habilitar botones solo si hay productos Y cliente completo
+    const habilitarBotones = hayProductos && clienteCompleto;
 
     $('#btn-procesar-venta').prop('disabled', !habilitarBotones);
     $('#btn-guardar-borrador').prop('disabled', !habilitarBotones);

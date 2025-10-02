@@ -121,44 +121,82 @@ if (!isset($_SESSION['csrf_token'])) {
             <!-- Right Panel - Customer Info & Totals -->
             <div class="space-y-3 sm:space-y-4">
 
-                <!-- Customer Selection -->
+                <!-- Customer Section -->
                 <div class="bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-neutral-800 dark:border-neutral-700">
                     <div class="p-3 sm:p-4 border-b border-gray-200 dark:border-neutral-700">
-                        <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-neutral-200">Cliente</h3>
+                        <h3 class="text-base sm:text-lg font-semibold text-gray-800 dark:text-neutral-200">Datos del Cliente</h3>
                     </div>
                     <div class="p-3 sm:p-4 space-y-3">
-                        <div class="relative">
-                            <label class="block text-xs sm:text-sm font-medium mb-1 dark:text-white">Buscar Cliente</label>
-                            <div class="flex gap-2">
-                                <div class="relative flex-1">
-                                    <input type="text" id="buscar-cliente" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Nombre o identificación...">
-                                    <input type="hidden" id="cliente-seleccionado-id" value="">
-                                    <!-- Cliente Results Dropdown -->
-                                    <div id="clientes-resultado" class="hidden absolute z-10 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-neutral-800 dark:border-neutral-700">
-                                        <!-- Se llenará dinámicamente -->
-                                    </div>
+
+                        <!-- Búsqueda de Cliente -->
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Buscar por ID o Nombre</label>
+                            <div class="relative">
+                                <input type="text" id="buscar-cliente" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Ej: 1721234567 o Juan Pérez">
+                                <input type="hidden" id="cliente-seleccionado-id" value="">
+                                <!-- Dropdown de resultados -->
+                                <div id="clientes-resultado" class="hidden absolute z-10 mt-1 w-full max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-neutral-800 dark:border-neutral-700">
+                                    <!-- Se llenará dinámicamente -->
                                 </div>
-                                <button type="button" id="btn-nuevo-cliente-venta" class="flex-shrink-0 px-3 py-2 inline-flex items-center gap-x-1 text-xs font-medium rounded-lg border border-blue-600 bg-blue-600 text-white hover:bg-blue-700 dark:border-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600" title="Agregar nuevo cliente">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                                    </svg>
-                                </button>
                             </div>
                         </div>
 
-                        <!-- Selected Customer Info -->
-                        <div id="cliente-info" class="hidden p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800">
-                            <div class="flex justify-between items-start gap-2">
-                                <div class="flex-1 min-w-0">
-                                    <p class="font-semibold text-sm sm:text-base text-gray-800 dark:text-white truncate" id="cliente-nombre">-</p>
-                                    <p class="text-xs sm:text-sm text-gray-600 dark:text-neutral-400 truncate" id="cliente-identificacion">-</p>
-                                    <p class="text-xs sm:text-sm text-gray-600 dark:text-neutral-400 truncate" id="cliente-email">-</p>
-                                </div>
-                                <button type="button" id="btn-cambiar-cliente" class="flex-shrink-0 text-xs text-blue-600 hover:text-blue-800 font-medium dark:text-blue-400 dark:hover:text-blue-300">
-                                    Cambiar
-                                </button>
+                        <!-- Formulario de Cliente (Se muestra/oculta dinámicamente) -->
+                        <div id="form-cliente-inline" class="space-y-3 hidden">
+
+                            <!-- Tipo de Identificación -->
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Tipo Identificación <span class="text-red-500">*</span></label>
+                                <select id="cliente_tipo_identificacion_sri" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white">
+                                    <option value="04">RUC</option>
+                                    <option value="05" selected>Cédula</option>
+                                    <option value="06">Pasaporte</option>
+                                    <option value="08">Identificación del Exterior</option>
+                                </select>
                             </div>
+
+                            <!-- Número de Identificación -->
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Número Identificación <span class="text-red-500">*</span></label>
+                                <input type="text" id="cliente_numero_identificacion" maxlength="13" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Ej: 1721234567">
+                                <div id="cliente_error_identificacion" class="hidden mt-1 text-xs text-red-600"></div>
+                            </div>
+
+                            <!-- Nombres -->
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Nombres <span class="text-red-500">*</span></label>
+                                <input type="text" id="cliente_nombres" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Ej: Juan Carlos">
+                            </div>
+
+                            <!-- Apellidos -->
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Apellidos <span class="text-red-500">*</span></label>
+                                <input type="text" id="cliente_apellidos" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Ej: Pérez García">
+                            </div>
+
+                            <!-- Email -->
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Email</label>
+                                <input type="email" id="cliente_email" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="ejemplo@correo.com">
+                            </div>
+
+                            <!-- Teléfono -->
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Teléfono</label>
+                                <input type="text" id="cliente_telefono" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="0987654321">
+                            </div>
+
+                            <!-- Dirección -->
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Dirección</label>
+                                <textarea id="cliente_direccion" rows="2" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Av. Principal 123"></textarea>
+                            </div>
+
+                            <!-- Estado del cliente (nuevo/existente) -->
+                            <input type="hidden" id="cliente_estado" value="nuevo">
+
                         </div>
+
                     </div>
                 </div>
 
@@ -235,122 +273,5 @@ if (!isset($_SESSION['csrf_token'])) {
     </div>
 </div>
 <!-- End Content -->
-
-<!-- Modal Agregar Cliente desde Ventas -->
-<div id="modal-nuevo-cliente-venta" class="hs-overlay hidden size-full fixed top-0 start-0 z-[80] overflow-x-hidden overflow-y-auto pointer-events-none">
-    <div class="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-2xl sm:w-full m-3 sm:mx-auto">
-        <div class="flex flex-col bg-white shadow-2xl rounded-2xl pointer-events-auto dark:bg-neutral-800 dark:shadow-neutral-700/70 overflow-hidden">
-            <!-- Header -->
-            <div class="flex justify-between items-center py-4 px-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-neutral-800 dark:to-neutral-800">
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-xl dark:bg-blue-900/20">
-                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Nuevo Cliente</h3>
-                        <p class="text-xs text-gray-600 dark:text-neutral-400">Agregar cliente rápidamente</p>
-                    </div>
-                </div>
-                <button type="button" class="flex justify-center items-center w-8 h-8 text-sm font-semibold rounded-lg border border-transparent text-gray-500 hover:bg-white hover:text-gray-800 transition-all duration-200 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-white" data-hs-overlay="#modal-nuevo-cliente-venta">
-                    <span class="sr-only">Close</span>
-                    <svg class="flex-shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="m18 6-12 12"></path>
-                        <path d="m6 6 12 12"></path>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Body -->
-            <div class="p-4 sm:p-6 overflow-y-auto max-h-[70vh]">
-                <form id="form-nuevo-cliente-venta" class="space-y-4">
-                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Tipo de identificación -->
-                        <div>
-                            <label for="venta_tipo_identificacion_sri" class="block text-sm font-medium mb-1 dark:text-white">
-                                Tipo de Identificación <span class="text-red-500">*</span>
-                            </label>
-                            <select id="venta_tipo_identificacion_sri" name="tipo_identificacion_sri" required class="py-2 px-3 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
-                                <option value="04">RUC</option>
-                                <option value="05" selected>Cédula</option>
-                                <option value="06">Pasaporte</option>
-                                <option value="08">Identificación del Exterior</option>
-                            </select>
-                        </div>
-
-                        <!-- Número de identificación -->
-                        <div>
-                            <label for="venta_numero_identificacion" class="block text-sm font-medium mb-1 dark:text-white">
-                                Número de Identificación <span class="text-red-500">*</span>
-                            </label>
-                            <input type="text" id="venta_numero_identificacion" name="numero_identificacion" required maxlength="13" class="py-2 px-3 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400" placeholder="Ej: 1234567890">
-                            <div id="venta_error_identificacion" class="hidden mt-1 text-xs text-red-600"></div>
-                            <div id="venta_error_duplicado" class="hidden mt-1 text-xs text-red-600"></div>
-                        </div>
-
-                        <!-- Nombres -->
-                        <div>
-                            <label for="venta_nombres" class="block text-sm font-medium mb-1 dark:text-white">
-                                Nombres <span class="text-red-500">*</span>
-                            </label>
-                            <input type="text" id="venta_nombres" name="nombres" required class="py-2 px-3 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400" placeholder="Ej: Juan Carlos">
-                        </div>
-
-                        <!-- Apellidos -->
-                        <div>
-                            <label for="venta_apellidos" class="block text-sm font-medium mb-1 dark:text-white">
-                                Apellidos <span class="text-red-500">*</span>
-                            </label>
-                            <input type="text" id="venta_apellidos" name="apellidos" required class="py-2 px-3 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400" placeholder="Ej: Pérez García">
-                        </div>
-
-                        <!-- Email -->
-                        <div>
-                            <label for="venta_email" class="block text-sm font-medium mb-1 dark:text-white">
-                                Email
-                            </label>
-                            <input type="email" id="venta_email" name="email" class="py-2 px-3 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400" placeholder="ejemplo@correo.com">
-                        </div>
-
-                        <!-- Teléfono -->
-                        <div>
-                            <label for="venta_telefono" class="block text-sm font-medium mb-1 dark:text-white">
-                                Teléfono
-                            </label>
-                            <input type="text" id="venta_telefono" name="telefono" class="py-2 px-3 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400" placeholder="Ej: 0987654321">
-                        </div>
-
-                        <!-- Dirección -->
-                        <div class="sm:col-span-2">
-                            <label for="venta_direccion" class="block text-sm font-medium mb-1 dark:text-white">
-                                Dirección <span class="text-xs text-gray-500">(Por defecto: Quito)</span>
-                            </label>
-                            <textarea id="venta_direccion" name="direccion" rows="2" class="py-2 px-3 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400" placeholder="Ej: Av. Principal 123 y Calle Secundaria"></textarea>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Footer -->
-            <div class="flex justify-end items-center gap-x-2 py-3 px-4 sm:px-6 bg-gray-50 dark:bg-neutral-900 border-t border-gray-200 dark:border-neutral-700">
-                <button type="button" class="py-2 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50 dark:bg-neutral-900 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800" data-hs-overlay="#modal-nuevo-cliente-venta">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                    Cancelar
-                </button>
-                <button type="button" id="btn-guardar-cliente-venta" class="py-2 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    Guardar Cliente
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
