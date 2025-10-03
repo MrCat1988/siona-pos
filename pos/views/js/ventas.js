@@ -533,11 +533,18 @@ function inicializarEventos() {
     $('#cliente_numero_identificacion').on('blur', function() {
         // Esperar un momento para que el clic en dropdown se procese primero
         setTimeout(function() {
-            if (resultadosBusquedaClientes.length > 0 && !$('#cliente-seleccionado-id').val()) {
-                // Hay resultados y no se ha seleccionado ninguno manualmente
+            console.log('🔍 Blur en numero_identificacion:', {
+                resultados: resultadosBusquedaClientes.length,
+                clienteId: $('#cliente-seleccionado-id').val(),
+                dropdown_visible: !$('#clientes-resultado').hasClass('hidden')
+            });
+
+            // Auto-cargar si hay resultados y el dropdown está visible
+            if (resultadosBusquedaClientes.length > 0 && !$('#clientes-resultado').hasClass('hidden')) {
                 console.log('📋 Auto-cargando primer cliente encontrado');
                 cargarClienteEnFormulario(resultadosBusquedaClientes[0]);
                 $('#clientes-resultado').addClass('hidden');
+                resultadosBusquedaClientes = []; // Limpiar para evitar re-carga
             }
         }, 200);
     });
@@ -545,11 +552,18 @@ function inicializarEventos() {
     $('#cliente_apellidos').on('blur', function() {
         // Esperar un momento para que el clic en dropdown se procese primero
         setTimeout(function() {
-            if (resultadosBusquedaClientes.length > 0 && !$('#cliente-seleccionado-id').val()) {
-                // Hay resultados y no se ha seleccionado ninguno manualmente
+            console.log('🔍 Blur en apellidos:', {
+                resultados: resultadosBusquedaClientes.length,
+                clienteId: $('#cliente-seleccionado-id').val(),
+                dropdown_visible: !$('#clientes-resultado').hasClass('hidden')
+            });
+
+            // Auto-cargar si hay resultados y el dropdown está visible
+            if (resultadosBusquedaClientes.length > 0 && !$('#clientes-resultado').hasClass('hidden')) {
                 console.log('📋 Auto-cargando primer cliente encontrado');
                 cargarClienteEnFormulario(resultadosBusquedaClientes[0]);
                 $('#clientes-resultado').addClass('hidden');
+                resultadosBusquedaClientes = []; // Limpiar para evitar re-carga
             }
         }, 200);
     });
