@@ -5,6 +5,7 @@ MÓDULO DE VENTAS - PROTOTIPO FUNCIONAL
 // Variables globales
 let carrito = [];
 let clienteSeleccionado = null;
+let resultadosBusquedaClientes = []; // Almacena resultados de búsqueda para auto-carga
 
 // Datos de prueba - Productos
 const productosDemo = [
@@ -522,9 +523,35 @@ function inicializarEventos() {
             }, 500);
         } else {
             $('#clientes-resultado').addClass('hidden');
+            resultadosBusquedaClientes = [];
         }
 
         actualizarEstadoBotones();
+    });
+
+    // Auto-cargar cliente si se encontró al cambiar de campo (blur)
+    $('#cliente_numero_identificacion').on('blur', function() {
+        // Esperar un momento para que el clic en dropdown se procese primero
+        setTimeout(function() {
+            if (resultadosBusquedaClientes.length > 0 && !$('#cliente-seleccionado-id').val()) {
+                // Hay resultados y no se ha seleccionado ninguno manualmente
+                console.log('📋 Auto-cargando primer cliente encontrado');
+                cargarClienteEnFormulario(resultadosBusquedaClientes[0]);
+                $('#clientes-resultado').addClass('hidden');
+            }
+        }, 200);
+    });
+
+    $('#cliente_apellidos').on('blur', function() {
+        // Esperar un momento para que el clic en dropdown se procese primero
+        setTimeout(function() {
+            if (resultadosBusquedaClientes.length > 0 && !$('#cliente-seleccionado-id').val()) {
+                // Hay resultados y no se ha seleccionado ninguno manualmente
+                console.log('📋 Auto-cargando primer cliente encontrado');
+                cargarClienteEnFormulario(resultadosBusquedaClientes[0]);
+                $('#clientes-resultado').addClass('hidden');
+            }
+        }, 200);
     });
 
     // Actualizar botones cuando cambia el formulario de cliente
@@ -1010,15 +1037,19 @@ function buscarClientePorIdentificacion(numero) {
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success' && response.data.length > 0) {
+                // Almacenar resultados para auto-carga
+                resultadosBusquedaClientes = response.data;
                 mostrarResultadosClientes(response.data, 'numero_identificacion');
             } else {
                 $('#clientes-resultado').addClass('hidden');
+                resultadosBusquedaClientes = [];
                 // No se encontró - dejar campos vacíos para crear nuevo
                 console.log('ℹ️ Cliente no encontrado con ese número');
             }
         },
         error: function(xhr, status, error) {
             console.error('Error al buscar clientes:', error);
+            resultadosBusquedaClientes = [];
         }
     });
 }
@@ -1042,15 +1073,19 @@ function buscarClientePorApellidos(termino) {
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success' && response.data.length > 0) {
+                // Almacenar resultados para auto-carga
+                resultadosBusquedaClientes = response.data;
                 mostrarResultadosClientes(response.data, 'apellidos');
             } else {
                 $('#clientes-resultado').addClass('hidden');
+                resultadosBusquedaClientes = [];
                 // No se encontró - dejar campos para crear nuevo
                 console.log('ℹ️ Cliente no encontrado con ese apellido');
             }
         },
         error: function(xhr, status, error) {
             console.error('Error al buscar clientes:', error);
+            resultadosBusquedaClientes = [];
         }
     });
 }
@@ -1106,6 +1141,8 @@ function mostrarResultadosClientes(clientes, campoOrigen) {
         const cliente = JSON.parse($(this).attr('data-cliente'));
         cargarClienteEnFormulario(cliente);
         $('#clientes-resultado').addClass('hidden');
+        // Limpiar resultados porque ya se seleccionó manualmente
+        resultadosBusquedaClientes = [];
     });
 }
 
@@ -1188,6 +1225,9 @@ function limpiarFormularioCliente() {
     // Limpiar validaciones visuales
     $('#cliente_numero_identificacion').removeClass('border-red-500 border-green-500');
     $('#cliente_error_identificacion').addClass('hidden');
+
+    // Limpiar resultados de búsqueda
+    resultadosBusquedaClientes = [];
 
     clienteSeleccionado = null;
     actualizarEstadoBotones();
