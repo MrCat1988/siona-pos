@@ -434,31 +434,49 @@ function inicializarEventos() {
     // Búsqueda automática por número de identificación (6+ dígitos)
     let timeoutBusquedaNumero;
     $('#cliente_numero_identificacion').on('input', function() {
+        const tipo = $('#cliente_tipo_identificacion_sri').val();
         let valor = $(this).val();
 
-        // Permitir solo números
-        valor = valor.replace(/[^0-9]/g, '');
+        // Filtrar caracteres según tipo de identificación
+        if (tipo === '05' || tipo === '04') {
+            // Cédula o RUC: solo números
+            valor = valor.replace(/[^0-9]/g, '');
+        } else if (tipo === '06' || tipo === '08') {
+            // Pasaporte o ID Exterior: alfanumérico
+            valor = valor.replace(/[^a-zA-Z0-9]/g, '');
+        }
         $(this).val(valor);
 
         // Limpiar timeout anterior
         clearTimeout(timeoutBusquedaNumero);
 
-        // Auto-detectar tipo según longitud
-        if (valor.length === 10) {
-            $('#cliente_tipo_identificacion_sri').val('05'); // Cédula
-            // Validar cédula completa
-            validarIdentificacionCliente();
-        } else if (valor.length === 13) {
-            $('#cliente_tipo_identificacion_sri').val('04'); // RUC
-            // Validar RUC completo
-            validarIdentificacionCliente();
+        // Auto-detectar tipo según longitud (solo si es numérico)
+        const esNumerico = /^\d+$/.test(valor);
+        if (esNumerico) {
+            if (valor.length === 10) {
+                $('#cliente_tipo_identificacion_sri').val('05'); // Cédula
+                // Validar cédula completa
+                validarIdentificacionCliente();
+            } else if (valor.length === 13) {
+                $('#cliente_tipo_identificacion_sri').val('04'); // RUC
+                // Validar RUC completo
+                validarIdentificacionCliente();
+            } else {
+                // Limpiar validación visual si tiene menos de 10/13 dígitos
+                $('#cliente_numero_identificacion').removeClass('border-red-500 border-green-500');
+                $('#cliente_error_identificacion').addClass('hidden');
+            }
         } else {
-            // Limpiar validación visual si tiene menos de 10/13 dígitos
-            $('#cliente_numero_identificacion').removeClass('border-red-500 border-green-500');
-            $('#cliente_error_identificacion').addClass('hidden');
+            // Para pasaporte/ID exterior: validar longitud mínima
+            if (valor.length >= 5) {
+                validarIdentificacionCliente();
+            } else {
+                $('#cliente_numero_identificacion').removeClass('border-red-500 border-green-500');
+                $('#cliente_error_identificacion').addClass('hidden');
+            }
         }
 
-        // Buscar si tiene 6+ dígitos
+        // Buscar si tiene 6+ caracteres
         if (valor.length >= 6) {
             timeoutBusquedaNumero = setTimeout(function() {
                 buscarClientePorIdentificacion(valor);
@@ -503,9 +521,12 @@ function inicializarEventos() {
             // Si selecciona Consumidor Final, cargar desde DB
             cargarConsumidorFinal();
         } else {
-            // Si cambia a otro tipo, habilitar edición
+            // Si cambia a otro tipo, habilitar edición y limpiar campos
             desbloquearEdicionCliente();
             limpiarFormularioCliente();
+
+            // Actualizar placeholder según tipo seleccionado
+            actualizarPlaceholderIdentificacion(tipo);
         }
     });
 
@@ -1142,6 +1163,35 @@ function limpiarFormularioCliente() {
     actualizarEstadoBotones();
 }
 
+/*=============================================
+ACTUALIZAR PLACEHOLDER SEGÚN TIPO DE IDENTIFICACIÓN
+=============================================*/
+function actualizarPlaceholderIdentificacion(tipo) {
+    const $input = $('#cliente_numero_identificacion');
+
+    if (tipo === '05') {
+        // Cédula
+        $input.attr('placeholder', 'Ej: 1721234567 (10 dígitos)');
+        $input.attr('maxlength', '10');
+    } else if (tipo === '04') {
+        // RUC
+        $input.attr('placeholder', 'Ej: 1721234567001 (13 dígitos)');
+        $input.attr('maxlength', '13');
+    } else if (tipo === '06') {
+        // Pasaporte
+        $input.attr('placeholder', 'Ej: ABC123456');
+        $input.attr('maxlength', '20');
+    } else if (tipo === '08') {
+        // ID Exterior
+        $input.attr('placeholder', 'Ej: 123456789');
+        $input.attr('maxlength', '20');
+    } else {
+        // Otros
+        $input.attr('placeholder', '6+ dígitos para buscar');
+        $input.attr('maxlength', '20');
+    }
+}
+
 
 /*=============================================
 ACTUALIZAR ESTADO DE BOTONES
@@ -1406,6 +1456,16 @@ function validarIdentificacionCliente() {
         } else if (!validateRuc(numero)) {
             esValido = false;
             mensaje = 'Número de RUC inválido';
+        }
+    }
+    // Validación para Pasaporte (06) o ID Exterior (08)
+    else if (tipo === '06' || tipo === '08') {
+        // Solo validar que tenga al menos 5 caracteres
+        if (numero.length < 5) {
+            esValido = false;
+            mensaje = 'Debe tener al menos 5 caracteres';
+        } else {
+            esValido = true;
         }
     }
 
