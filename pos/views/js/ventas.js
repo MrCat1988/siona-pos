@@ -352,7 +352,7 @@ const clientesDemo = [
 $(document).ready(function() {
     console.log('🛒 Módulo de Ventas inicializado');
 
-    // Cargar Consumidor Final desde base de datos
+    // Cargar Consumidor Final desde base de datos por defecto
     cargarConsumidorFinal();
 
     // Event Listeners
@@ -393,28 +393,8 @@ function cargarConsumidorFinal() {
                 $('#cliente_direccion').val(consumidorFinal.direccion || 'Quito');
                 $('#cliente_estado').val('existente');
 
-                // Mostrar opción Consumidor Final en el select
-                $('#cliente_tipo_identificacion_sri option[value="07"]').show();
-
-                // Mostrar campos
-                console.log('🔍 Mostrando campos de cliente...');
-                $('#field-tipo-id').removeClass('hidden');
-                $('#field-numero-id').removeClass('hidden');
-                $('#field-nombres').removeClass('hidden');
-                $('#field-apellidos').removeClass('hidden');
-                $('#field-email').removeClass('hidden');
-                $('#field-telefono').removeClass('hidden');
-                $('#field-direccion').removeClass('hidden');
-                console.log('✅ Campos mostrados');
-
                 // Hacer todos los campos de solo lectura (Consumidor Final no es editable)
-                $('#cliente_tipo_identificacion_sri').prop('disabled', true);
-                $('#cliente_numero_identificacion').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
-                $('#cliente_nombres').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
-                $('#cliente_apellidos').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
-                $('#cliente_email').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
-                $('#cliente_telefono').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
-                $('#cliente_direccion').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
+                bloquearEdicionCliente();
 
                 console.log('✅ Consumidor Final cargado (solo lectura)');
                 showNotification('✅ Consumidor Final cargado', 'success');
@@ -451,18 +431,81 @@ function inicializarEventos() {
         }
     });
 
-    // Búsqueda de clientes con debounce
-    let timeoutBusquedaCliente;
-    $('#buscar-cliente').on('keyup', function() {
-        clearTimeout(timeoutBusquedaCliente);
+    // Búsqueda automática por número de identificación (6+ dígitos)
+    let timeoutBusquedaNumero;
+    $('#cliente_numero_identificacion').on('input', function() {
+        let valor = $(this).val();
+
+        // Permitir solo números
+        valor = valor.replace(/[^0-9]/g, '');
+        $(this).val(valor);
+
+        // Limpiar timeout anterior
+        clearTimeout(timeoutBusquedaNumero);
+
+        // Auto-detectar tipo según longitud
+        if (valor.length === 10) {
+            $('#cliente_tipo_identificacion_sri').val('05'); // Cédula
+            // Validar cédula completa
+            validarIdentificacionCliente();
+        } else if (valor.length === 13) {
+            $('#cliente_tipo_identificacion_sri').val('04'); // RUC
+            // Validar RUC completo
+            validarIdentificacionCliente();
+        } else {
+            // Limpiar validación visual si tiene menos de 10/13 dígitos
+            $('#cliente_numero_identificacion').removeClass('border-red-500 border-green-500');
+            $('#cliente_error_identificacion').addClass('hidden');
+        }
+
+        // Buscar si tiene 6+ dígitos
+        if (valor.length >= 6) {
+            timeoutBusquedaNumero = setTimeout(function() {
+                buscarClientePorIdentificacion(valor);
+            }, 500);
+        } else {
+            $('#clientes-resultado').addClass('hidden');
+        }
+
+        actualizarEstadoBotones();
+    });
+
+    // Búsqueda automática por apellidos (3+ caracteres)
+    let timeoutBusquedaApellidos;
+    $('#cliente_apellidos').on('input', function() {
         const termino = $(this).val().trim();
 
-        if (termino.length >= 2) {
-            timeoutBusquedaCliente = setTimeout(function() {
-                buscarClientes(termino);
-            }, 300);
+        // Limpiar timeout anterior
+        clearTimeout(timeoutBusquedaApellidos);
+
+        // Buscar si tiene 3+ caracteres
+        if (termino.length >= 3) {
+            timeoutBusquedaApellidos = setTimeout(function() {
+                buscarClientePorApellidos(termino);
+            }, 500);
         } else {
-            $('#clientes-resultado').addClass('hidden').empty();
+            $('#clientes-resultado').addClass('hidden');
+        }
+
+        actualizarEstadoBotones();
+    });
+
+    // Actualizar botones cuando cambia el formulario de cliente
+    $('#cliente_nombres').on('input', function() {
+        actualizarEstadoBotones();
+    });
+
+    // Validar cuando cambia el tipo manualmente
+    $('#cliente_tipo_identificacion_sri').on('change', function() {
+        const tipo = $(this).val();
+
+        if (tipo === '07') {
+            // Si selecciona Consumidor Final, cargar desde DB
+            cargarConsumidorFinal();
+        } else {
+            // Si cambia a otro tipo, habilitar edición
+            desbloquearEdicionCliente();
+            limpiarFormularioCliente();
         }
     });
 
@@ -473,49 +516,6 @@ function inicializarEventos() {
                 limpiarCarrito();
             }
         }
-    });
-
-    // Actualizar botones cuando cambia el formulario de cliente
-    $('#cliente_numero_identificacion, #cliente_nombres, #cliente_apellidos').on('input', function() {
-        actualizarEstadoBotones();
-    });
-
-    // Auto-detección de tipo y validación de identificación
-    $('#cliente_numero_identificacion').on('input', function() {
-        let valor = $(this).val();
-
-        // Permitir solo números
-        valor = valor.replace(/[^0-9]/g, '');
-        $(this).val(valor);
-
-        // Auto-detectar tipo según longitud
-        if (valor.length === 10) {
-            $('#cliente_tipo_identificacion_sri').val('05'); // Cédula
-            validarIdentificacionCliente();
-        } else if (valor.length === 13) {
-            $('#cliente_tipo_identificacion_sri').val('04'); // RUC
-            validarIdentificacionCliente();
-        } else if (valor.length > 0) {
-            // Limpiar validación visual
-            $('#cliente_numero_identificacion').removeClass('border-red-500 border-green-500');
-            $('#cliente_error_identificacion').addClass('hidden');
-        }
-
-        actualizarEstadoBotones();
-    });
-
-    // Validar cuando cambia el tipo manualmente
-    $('#cliente_tipo_identificacion_sri').on('change', function() {
-        validarIdentificacionCliente();
-    });
-
-    // Botón rápido Consumidor Final
-    $('#btn-consumidor-final').on('click', function() {
-        console.log('⚡ Cargando Consumidor Final rápidamente...');
-        cargarConsumidorFinal();
-        $('#buscar-cliente').val(''); // Limpiar búsqueda
-        // Ocultar dropdown de resultados si está visible
-        $('#clientes-resultado').addClass('hidden');
     });
 
     // Procesar venta
@@ -538,7 +538,7 @@ function inicializarEventos() {
         if (!$(e.target).closest('#buscar-producto, #productos-resultado').length) {
             $('#productos-resultado').addClass('hidden');
         }
-        if (!$(e.target).closest('#buscar-cliente, #clientes-resultado').length) {
+        if (!$(e.target).closest('#cliente_numero_identificacion, #cliente_apellidos, #clientes-resultado').length) {
             $('#clientes-resultado').addClass('hidden');
         }
     });
@@ -944,12 +944,43 @@ function calcularTotales() {
 }
 
 /*=============================================
-BUSCAR CLIENTES EN BASE DE DATOS
+BUSCAR CLIENTE POR NÚMERO DE IDENTIFICACIÓN
 =============================================*/
-function buscarClientes(termino) {
-    console.log('🔍 Buscando clientes:', termino);
+function buscarClientePorIdentificacion(numero) {
+    console.log('🔍 Buscando cliente por identificación:', numero);
 
-    // Buscar en base de datos real
+    $.ajax({
+        url: 'ajax/clientes.ajax.php',
+        method: 'POST',
+        data: {
+            accion: 'obtener_clientes',
+            csrf_token: $('input[name="csrf_token"]').val(),
+            busqueda: numero,
+            estado: 1,
+            limit: 10
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success' && response.data.length > 0) {
+                mostrarResultadosClientes(response.data, 'numero_identificacion');
+            } else {
+                $('#clientes-resultado').addClass('hidden');
+                // No se encontró - dejar campos vacíos para crear nuevo
+                console.log('ℹ️ Cliente no encontrado con ese número');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error al buscar clientes:', error);
+        }
+    });
+}
+
+/*=============================================
+BUSCAR CLIENTE POR APELLIDOS
+=============================================*/
+function buscarClientePorApellidos(termino) {
+    console.log('🔍 Buscando cliente por apellidos:', termino);
+
     $.ajax({
         url: 'ajax/clientes.ajax.php',
         method: 'POST',
@@ -957,127 +988,68 @@ function buscarClientes(termino) {
             accion: 'obtener_clientes',
             csrf_token: $('input[name="csrf_token"]').val(),
             busqueda: termino,
-            estado: 1, // Solo clientes activos
-            limit: 10 // Limitar resultados para búsqueda rápida
+            estado: 1,
+            limit: 10
         },
         dataType: 'json',
         success: function(response) {
             if (response.status === 'success' && response.data.length > 0) {
-                // Se encontraron clientes
-                mostrarResultadosClientes(response.data);
+                mostrarResultadosClientes(response.data, 'apellidos');
             } else {
-                // NO se encontraron clientes - Mostrar inputs para crear
-                console.log('⚠️ Cliente no encontrado. Mostrando formulario...');
-                const esNumerico = /^\d+$/.test(termino);
-                mostrarFormularioCliente(termino, esNumerico, true); // true = nuevo cliente
+                $('#clientes-resultado').addClass('hidden');
+                // No se encontró - dejar campos para crear nuevo
+                console.log('ℹ️ Cliente no encontrado con ese apellido');
             }
         },
         error: function(xhr, status, error) {
             console.error('Error al buscar clientes:', error);
-            showNotification('Error al buscar clientes', 'error');
         }
     });
 }
 
-/*=============================================
-MOSTRAR MENSAJE CUANDO NO SE ENCUENTRA CLIENTE
-=============================================*/
-function mostrarMensajeNoEncontrado(termino, esNumerico) {
-    const container = $('#clientes-resultado');
-    const mensaje = esNumerico
-        ? `No se encontró ningún cliente con identificación <strong>${termino}</strong>`
-        : `No se encontró ningún cliente con el nombre <strong>${termino}</strong>`;
-
-    container.html(`
-        <div class="p-4 text-center">
-            <div class="flex flex-col items-center gap-2">
-                <svg class="w-12 h-12 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                </svg>
-                <p class="text-gray-700 dark:text-gray-300">${mensaje}</p>
-                <p class="text-sm text-blue-600 dark:text-blue-400 font-medium animate-pulse">
-                    🚀 Abriendo formulario para crear cliente...
-                </p>
-            </div>
-        </div>
-    `).removeClass('hidden');
-}
-
-/*=============================================
-ABRIR MODAL CON DATOS PRELLENADOS
-=============================================*/
-function abrirModalConDatos(termino, esNumerico) {
-    // Limpiar formulario primero
-    $('#form-nuevo-cliente-venta')[0].reset();
-    $('#venta_numero_identificacion').removeClass('border-red-500 border-green-500');
-    $('#venta_error_identificacion, #venta_error_duplicado').addClass('hidden');
-
-    // Prellenar datos según el tipo de búsqueda
-    if (esNumerico) {
-        // Es un número de identificación
-        $('#venta_numero_identificacion').val(termino);
-
-        // Auto-detectar tipo
-        if (termino.length === 10) {
-            $('#venta_tipo_identificacion_sri').val('05'); // Cédula
-        } else if (termino.length === 13) {
-            $('#venta_tipo_identificacion_sri').val('04'); // RUC
-        }
-
-        actualizarPlaceholderVenta();
-        validarNumeroIdentificacionVenta();
-        verificarDuplicadoVenta();
-    } else {
-        // Es un nombre/apellido
-        // Intentar separar en nombre y apellido
-        const palabras = termino.trim().split(/\s+/);
-
-        if (palabras.length === 1) {
-            // Solo una palabra - asumir que es apellido
-            $('#venta_apellidos').val(termino);
-        } else {
-            // Múltiples palabras - primera mitad nombres, segunda mitad apellidos
-            const mitad = Math.ceil(palabras.length / 2);
-            const nombres = palabras.slice(0, mitad).join(' ');
-            const apellidos = palabras.slice(mitad).join(' ');
-
-            $('#venta_nombres').val(nombres);
-            $('#venta_apellidos').val(apellidos);
-        }
-    }
-
-    // Abrir modal
-    window.HSOverlay.open('#modal-nuevo-cliente-venta');
-
-    // Ocultar dropdown de resultados
-    $('#clientes-resultado').addClass('hidden');
-}
 
 /*=============================================
 MOSTRAR RESULTADOS DE CLIENTES
 =============================================*/
-function mostrarResultadosClientes(clientes) {
+function mostrarResultadosClientes(clientes, campoOrigen) {
     const container = $('#clientes-resultado');
 
     if (clientes.length === 0) {
-        container.html(`
-            <div class="p-4 text-center text-gray-500">
-                <p>No se encontraron clientes</p>
-            </div>
-        `).removeClass('hidden');
+        container.addClass('hidden');
         return;
     }
 
-    let html = '';
+    // Posicionar el dropdown relativo al campo que activó la búsqueda
+    let $campoReferencia;
+    if (campoOrigen === 'numero_identificacion') {
+        $campoReferencia = $('#cliente_numero_identificacion');
+    } else {
+        $campoReferencia = $('#cliente_apellidos');
+    }
+
+    const offset = $campoReferencia.offset();
+    const height = $campoReferencia.outerHeight();
+
+    container.css({
+        'position': 'absolute',
+        'top': offset.top + height + 'px',
+        'left': offset.left + 'px',
+        'width': $campoReferencia.outerWidth() + 'px',
+        'max-height': '300px',
+        'overflow-y': 'auto'
+    });
+
+    let html = '<div class="py-1">';
     clientes.forEach(cliente => {
         html += `
             <div class="cliente-item p-3 hover:bg-gray-50 dark:hover:bg-neutral-700 cursor-pointer border-b border-gray-200 dark:border-neutral-700 last:border-b-0" data-cliente='${JSON.stringify(cliente)}'>
-                <p class="font-semibold text-gray-800 dark:text-white">${cliente.nombres} ${cliente.apellidos}</p>
-                <p class="text-sm text-gray-600 dark:text-neutral-400">${cliente.numero_identificacion}</p>
+                <p class="font-semibold text-sm text-gray-800 dark:text-white">${cliente.nombres} ${cliente.apellidos}</p>
+                <p class="text-xs text-gray-600 dark:text-neutral-400">${cliente.numero_identificacion}</p>
                 ${cliente.email ? `<p class="text-xs text-gray-500 dark:text-neutral-500">${cliente.email}</p>` : ''}
             </div>
         `;
     });
+    html += '</div>';
 
     container.html(html).removeClass('hidden');
 
@@ -1085,7 +1057,6 @@ function mostrarResultadosClientes(clientes) {
     $('.cliente-item').on('click', function() {
         const cliente = JSON.parse($(this).attr('data-cliente'));
         cargarClienteEnFormulario(cliente);
-        $('#buscar-cliente').val('');
         $('#clientes-resultado').addClass('hidden');
     });
 }
@@ -1111,19 +1082,13 @@ function cargarClienteEnFormulario(cliente) {
     // Marcar como cliente existente
     $('#cliente_estado').val('existente');
 
-    // Mostrar campos individuales en grid horizontal
-    $('#field-tipo-id, #field-numero-id, #field-nombres, #field-apellidos, #field-email, #field-telefono, #field-direccion').removeClass('hidden');
-
     // Si es Consumidor Final (tipo_identificacion_sri = '07'), hacer campos de solo lectura
     if (cliente.tipo_identificacion_sri === '07') {
         bloquearEdicionCliente();
-        // Mostrar opción Consumidor Final solo para CF
-        $('#cliente_tipo_identificacion_sri option[value="07"]').show();
-        showNotification('✅ Consumidor Final cargado (solo lectura)', 'success');
+        showNotification('✅ Consumidor Final cargado', 'success');
     } else {
-        desbloquearEdicionCliente();
-        // Ocultar opción Consumidor Final para clientes normales
-        $('#cliente_tipo_identificacion_sri option[value="07"]').hide();
+        // Para clientes normales: solo lectura (no editable desde ventas)
+        bloquearEdicionCliente();
         showNotification('✅ Cliente cargado: ' + cliente.nombres + ' ' + cliente.apellidos, 'success');
     }
 
@@ -1157,14 +1122,10 @@ function desbloquearEdicionCliente() {
 }
 
 /*=============================================
-MOSTRAR FORMULARIO PARA NUEVO CLIENTE
+LIMPIAR FORMULARIO DE CLIENTE
 =============================================*/
-function mostrarFormularioCliente(termino, esNumerico, esNuevo) {
-    console.log('📝 Mostrando formulario para nuevo cliente');
-
-    // Limpiar formulario manualmente (no es un <form>, es un <div>)
+function limpiarFormularioCliente() {
     $('#cliente-seleccionado-id').val('');
-    $('#cliente_tipo_identificacion_sri').val('05');
     $('#cliente_numero_identificacion').val('');
     $('#cliente_nombres').val('');
     $('#cliente_apellidos').val('');
@@ -1173,72 +1134,14 @@ function mostrarFormularioCliente(termino, esNumerico, esNuevo) {
     $('#cliente_direccion').val('');
     $('#cliente_estado').val('nuevo');
 
-    // Asegurarse de que los campos sean editables (no Consumidor Final)
-    desbloquearEdicionCliente();
+    // Limpiar validaciones visuales
+    $('#cliente_numero_identificacion').removeClass('border-red-500 border-green-500');
+    $('#cliente_error_identificacion').addClass('hidden');
 
-    // Ocultar opción "Consumidor Final" para clientes normales
-    $('#cliente_tipo_identificacion_sri option[value="07"]').hide();
-
-    // Pre-llenar datos según el término de búsqueda
-    if (esNumerico) {
-        // Es un número de identificación
-        $('#cliente_numero_identificacion').val(termino);
-
-        // Auto-detectar tipo y validar
-        if (termino.length === 10) {
-            // Validar cédula
-            if (validateCedula(termino)) {
-                $('#cliente_tipo_identificacion_sri').val('05'); // Cédula
-                console.log('✅ Cédula válida detectada');
-            } else {
-                $('#cliente_tipo_identificacion_sri').val('06'); // Pasaporte (cédula inválida)
-                console.log('⚠️ Cédula inválida - asignando Pasaporte');
-            }
-        } else if (termino.length === 13) {
-            // Validar RUC
-            if (validateRuc(termino)) {
-                $('#cliente_tipo_identificacion_sri').val('04'); // RUC
-                console.log('✅ RUC válido detectado');
-            } else {
-                $('#cliente_tipo_identificacion_sri').val('06'); // Pasaporte (RUC inválido)
-                console.log('⚠️ RUC inválido - asignando Pasaporte');
-            }
-        } else {
-            // Ni 10 ni 13 dígitos → Pasaporte
-            $('#cliente_tipo_identificacion_sri').val('06');
-            console.log('ℹ️ Número no corresponde a cédula/RUC - asignando Pasaporte');
-        }
-    } else {
-        // Es un nombre/apellido
-        const palabras = termino.trim().split(/\s+/);
-
-        if (palabras.length === 1) {
-            $('#cliente_apellidos').val(termino);
-        } else {
-            const mitad = Math.ceil(palabras.length / 2);
-            const nombres = palabras.slice(0, mitad).join(' ');
-            const apellidos = palabras.slice(mitad).join(' ');
-
-            $('#cliente_nombres').val(nombres);
-            $('#cliente_apellidos').val(apellidos);
-        }
-    }
-
-    // Dirección por defecto
-    $('#cliente_direccion').val('Quito');
-
-    // Mostrar campos individuales en grid horizontal
-    $('#field-tipo-id, #field-numero-id, #field-nombres, #field-apellidos, #field-email, #field-telefono, #field-direccion').removeClass('hidden');
-
-    // Ocultar dropdown de resultados
-    $('#clientes-resultado').addClass('hidden');
-
-    showNotification('ℹ️ Cliente no encontrado. Complete los datos para crear uno nuevo.', 'info');
-
-    // Limpiar cliente seleccionado (se creará al procesar venta)
     clienteSeleccionado = null;
     actualizarEstadoBotones();
 }
+
 
 /*=============================================
 ACTUALIZAR ESTADO DE BOTONES
@@ -1369,190 +1272,6 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-/*=============================================
-FUNCIONALIDAD CREAR CLIENTE DESDE VENTAS
-=============================================*/
-
-// Abrir modal de nuevo cliente
-$('#btn-nuevo-cliente-venta').on('click', function() {
-    abrirModalNuevoClienteVenta();
-});
-
-// Función para abrir el modal
-function abrirModalNuevoClienteVenta() {
-    // Limpiar formulario
-    $('#form-nuevo-cliente-venta')[0].reset();
-    $('#venta_tipo_identificacion_sri').val('05'); // Cédula por defecto
-    $('#venta_numero_identificacion').removeClass('border-red-500 border-green-500');
-    $('#venta_error_identificacion, #venta_error_duplicado').addClass('hidden');
-
-    // Abrir modal con Preline
-    window.HSOverlay.open('#modal-nuevo-cliente-venta');
-}
-
-// Validaciones en tiempo real - Tipo de identificación
-$('#venta_tipo_identificacion_sri').on('change', function() {
-    actualizarPlaceholderVenta();
-    validarNumeroIdentificacionVenta();
-});
-
-// Validaciones en tiempo real - Número de identificación
-$('#venta_numero_identificacion').on('input', function() {
-    let valor = $(this).val();
-
-    // Remover caracteres no numéricos
-    valor = valor.replace(/\D/g, '');
-    $(this).val(valor);
-
-    // Limpiar borde rojo cuando empieza a escribir
-    if (valor.length > 0) {
-        $(this).removeClass('border-red-500');
-    }
-
-    // Detección automática del tipo
-    detectarTipoIdentificacionVenta();
-    validarNumeroIdentificacionVenta();
-
-    // Verificar duplicados
-    verificarDuplicadoVenta();
-});
-
-// Validación de nombres y apellidos
-$('#venta_nombres, #venta_apellidos').on('blur', function() {
-    const valor = $(this).val().trim();
-    $(this).removeClass('border-red-500 border-green-500');
-
-    if (valor === '') {
-        $(this).addClass('border-red-500');
-    } else {
-        $(this).addClass('border-green-500');
-    }
-});
-
-// Guardar nuevo cliente
-$('#btn-guardar-cliente-venta').on('click', function() {
-    guardarNuevoClienteVenta();
-});
-
-/*=============================================
-ACTUALIZAR PLACEHOLDER SEGÚN TIPO
-=============================================*/
-function actualizarPlaceholderVenta() {
-    const tipo = $('#venta_tipo_identificacion_sri').val();
-    const $input = $('#venta_numero_identificacion');
-
-    if (tipo === '05') {
-        $input.attr('placeholder', 'Ej: 1234567890 (10 dígitos)');
-        $input.attr('maxlength', '10');
-    } else if (tipo === '04') {
-        $input.attr('placeholder', 'Ej: 1234567890001 (13 dígitos)');
-        $input.attr('maxlength', '13');
-    } else {
-        $input.attr('placeholder', 'Ej: 1234567890');
-        $input.attr('maxlength', '50');
-    }
-}
-
-/*=============================================
-DETECTAR TIPO DE IDENTIFICACIÓN
-=============================================*/
-function detectarTipoIdentificacionVenta() {
-    const numero = $('#venta_numero_identificacion').val().trim();
-    const tipoActual = $('#venta_tipo_identificacion_sri').val();
-
-    if (!/^\d+$/.test(numero)) {
-        return;
-    }
-
-    if (numero.length === 10 && validateCedula(numero)) {
-        if (tipoActual !== '05') {
-            $('#venta_tipo_identificacion_sri').val('05');
-            actualizarPlaceholderVenta();
-        }
-    } else if (numero.length === 13 && validateRuc(numero)) {
-        if (tipoActual !== '04') {
-            $('#venta_tipo_identificacion_sri').val('04');
-            actualizarPlaceholderVenta();
-        }
-    }
-}
-
-/*=============================================
-VALIDAR NÚMERO DE IDENTIFICACIÓN
-=============================================*/
-function validarNumeroIdentificacionVenta() {
-    const tipo = $('#venta_tipo_identificacion_sri').val();
-    const numero = $('#venta_numero_identificacion').val().trim();
-    const $input = $('#venta_numero_identificacion');
-    const $error = $('#venta_error_identificacion');
-
-    $error.addClass('hidden');
-    $input.removeClass('border-red-500 border-green-500');
-
-    if (numero === '') {
-        return true;
-    }
-
-    let valido = false;
-    let mensaje = '';
-
-    if (tipo === '05') {
-        valido = validateCedula(numero);
-        mensaje = valido ? '' : '❌ Cédula inválida (10 dígitos requeridos)';
-    } else if (tipo === '04') {
-        valido = validateRuc(numero);
-        mensaje = valido ? '' : '❌ RUC inválido (13 dígitos requeridos)';
-    } else {
-        valido = numero.length > 0;
-    }
-
-    if (numero.length > 0) {
-        if (valido) {
-            $input.addClass('border-green-500');
-        } else {
-            $input.addClass('border-red-500');
-            $error.text(mensaje).removeClass('hidden');
-        }
-    }
-
-    return valido;
-}
-
-/*=============================================
-VERIFICAR DUPLICADO
-=============================================*/
-let timeoutDuplicadoVenta = null;
-function verificarDuplicadoVenta() {
-    const numero = $('#venta_numero_identificacion').val().trim();
-    const $error = $('#venta_error_duplicado');
-
-    $error.addClass('hidden');
-
-    if (numero.length < 5) {
-        return;
-    }
-
-    clearTimeout(timeoutDuplicadoVenta);
-
-    timeoutDuplicadoVenta = setTimeout(function() {
-        $.ajax({
-            url: 'ajax/clientes.ajax.php',
-            method: 'POST',
-            data: {
-                accion: 'verificar_duplicado',
-                numero_identificacion: numero,
-                csrf_token: $('input[name="csrf_token"]').val()
-            },
-            dataType: 'json',
-            success: function(response) {
-                if (response.existe) {
-                    $error.text('⚠ Este número de identificación ya está registrado').removeClass('hidden');
-                    $('#venta_numero_identificacion').addClass('border-red-500');
-                }
-            }
-        });
-    }, 800);
-}
 
 /*=============================================
 VALIDACIÓN DE CÉDULA
@@ -1643,125 +1362,6 @@ function validateRucJuridico(ruc) {
     return digitoVerificador === parseInt(ruc.charAt(9));
 }
 
-/*=============================================
-GUARDAR NUEVO CLIENTE DESDE VENTAS
-=============================================*/
-function guardarNuevoClienteVenta() {
-    console.log('💾 Guardando nuevo cliente desde ventas...');
-
-    // Validar campos requeridos
-    const nombres = $('#venta_nombres').val().trim();
-    const apellidos = $('#venta_apellidos').val().trim();
-    const numeroIdentificacion = $('#venta_numero_identificacion').val().trim();
-
-    if (!nombres || !apellidos || !numeroIdentificacion) {
-        showNotification('Por favor complete todos los campos obligatorios', 'error');
-        return;
-    }
-
-    // Validar número de identificación
-    if (!validarNumeroIdentificacionVenta()) {
-        showNotification('Por favor corrija el número de identificación', 'error');
-        return;
-    }
-
-    // CAMBIO: Si hay duplicado, buscar y seleccionar el cliente existente
-    if (!$('#venta_error_duplicado').hasClass('hidden')) {
-        console.log('ℹ️ Cliente ya existe. Buscando y seleccionando...');
-        buscarYSeleccionarClienteExistente(numeroIdentificacion);
-        return;
-    }
-
-    // Establecer dirección por defecto si está vacía
-    let direccion = $('#venta_direccion').val().trim();
-    if (direccion === '') {
-        direccion = 'Quito';
-        $('#venta_direccion').val(direccion);
-    }
-
-    const formData = new FormData($('#form-nuevo-cliente-venta')[0]);
-    formData.append('accion', 'crear_cliente');
-    formData.set('estado', 1); // Siempre activo
-
-    $.ajax({
-        url: 'ajax/clientes.ajax.php',
-        method: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        dataType: 'json',
-        success: function(response) {
-            if (response.status === 'success') {
-                showNotification(response.message, 'success');
-
-                // Cerrar modal
-                window.HSOverlay.close('#modal-nuevo-cliente-venta');
-
-                // Seleccionar automáticamente el cliente recién creado
-                const nuevoCliente = {
-                    idcliente: response.idcliente,
-                    tipo_identificacion_sri: $('#venta_tipo_identificacion_sri').val(),
-                    numero_identificacion: numeroIdentificacion,
-                    nombres: nombres,
-                    apellidos: apellidos,
-                    email: $('#venta_email').val() || null,
-                    telefono: $('#venta_telefono').val() || null
-                };
-
-                seleccionarCliente(nuevoCliente);
-
-                console.log('✅ Cliente creado y seleccionado:', nuevoCliente);
-            } else {
-                showNotification(response.message, 'error');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error al crear cliente:', error);
-            showNotification('Error al crear el cliente', 'error');
-        }
-    });
-}
-
-/*=============================================
-BUSCAR Y SELECCIONAR CLIENTE EXISTENTE
-=============================================*/
-function buscarYSeleccionarClienteExistente(numeroIdentificacion) {
-    console.log('🔍 Buscando cliente existente con identificación:', numeroIdentificacion);
-
-    $.ajax({
-        url: 'ajax/clientes.ajax.php',
-        method: 'POST',
-        data: {
-            accion: 'obtener_clientes',
-            csrf_token: $('input[name="csrf_token"]').val(),
-            busqueda: numeroIdentificacion,
-            estado: 1,
-            limit: 1
-        },
-        dataType: 'json',
-        success: function(response) {
-            if (response.status === 'success' && response.data.length > 0) {
-                const clienteExistente = response.data[0];
-
-                // Cerrar modal
-                window.HSOverlay.close('#modal-nuevo-cliente-venta');
-
-                // Seleccionar el cliente existente
-                seleccionarCliente(clienteExistente);
-
-                showNotification('✅ Cliente encontrado y seleccionado: ' + clienteExistente.nombres + ' ' + clienteExistente.apellidos, 'success');
-
-                console.log('✅ Cliente existente seleccionado:', clienteExistente);
-            } else {
-                showNotification('No se pudo encontrar el cliente', 'error');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error al buscar cliente:', error);
-            showNotification('Error al buscar el cliente', 'error');
-        }
-    });
-}
 
 /*=============================================
 VALIDAR IDENTIFICACIÓN DEL CLIENTE
@@ -1771,6 +1371,11 @@ function validarIdentificacionCliente() {
     const numero = $('#cliente_numero_identificacion').val().trim();
     const $input = $('#cliente_numero_identificacion');
     const $error = $('#cliente_error_identificacion');
+
+    // Si es Consumidor Final, no validar (ya está precargado)
+    if (tipo === '07') {
+        return true;
+    }
 
     // Limpiar estilos previos
     $input.removeClass('border-red-500 border-green-500');
