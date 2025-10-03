@@ -529,43 +529,26 @@ function inicializarEventos() {
         actualizarEstadoBotones();
     });
 
-    // Auto-cargar cliente si se encontró al cambiar de campo (blur)
-    $('#cliente_numero_identificacion').on('blur', function() {
-        // Esperar un momento para que el clic en dropdown se procese primero
-        setTimeout(function() {
-            console.log('🔍 Blur en numero_identificacion:', {
+    // Auto-cargar cliente al perder foco si hay un resultado único exacto
+    let autoCargarTimeout;
+    $('#cliente_numero_identificacion, #cliente_apellidos').on('blur', function() {
+        clearTimeout(autoCargarTimeout);
+
+        // Esperar que la búsqueda AJAX termine y procesar
+        autoCargarTimeout = setTimeout(function() {
+            console.log('🔍 Verificando auto-carga:', {
                 resultados: resultadosBusquedaClientes.length,
-                clienteId: $('#cliente-seleccionado-id').val(),
                 dropdown_visible: !$('#clientes-resultado').hasClass('hidden')
             });
 
-            // Auto-cargar si hay resultados y el dropdown está visible
-            if (resultadosBusquedaClientes.length > 0 && !$('#clientes-resultado').hasClass('hidden')) {
-                console.log('📋 Auto-cargando primer cliente encontrado');
+            // Auto-cargar si hay exactamente 1 resultado (coincidencia exacta)
+            if (resultadosBusquedaClientes.length === 1) {
+                console.log('📋 Auto-cargando cliente (resultado único)');
                 cargarClienteEnFormulario(resultadosBusquedaClientes[0]);
                 $('#clientes-resultado').addClass('hidden');
-                resultadosBusquedaClientes = []; // Limpiar para evitar re-carga
+                resultadosBusquedaClientes = [];
             }
-        }, 200);
-    });
-
-    $('#cliente_apellidos').on('blur', function() {
-        // Esperar un momento para que el clic en dropdown se procese primero
-        setTimeout(function() {
-            console.log('🔍 Blur en apellidos:', {
-                resultados: resultadosBusquedaClientes.length,
-                clienteId: $('#cliente-seleccionado-id').val(),
-                dropdown_visible: !$('#clientes-resultado').hasClass('hidden')
-            });
-
-            // Auto-cargar si hay resultados y el dropdown está visible
-            if (resultadosBusquedaClientes.length > 0 && !$('#clientes-resultado').hasClass('hidden')) {
-                console.log('📋 Auto-cargando primer cliente encontrado');
-                cargarClienteEnFormulario(resultadosBusquedaClientes[0]);
-                $('#clientes-resultado').addClass('hidden');
-                resultadosBusquedaClientes = []; // Limpiar para evitar re-carga
-            }
-        }, 200);
+        }, 700); // Dar tiempo a que AJAX termine (500ms búsqueda + 200ms margen)
     });
 
     // Actualizar botones cuando cambia el formulario de cliente
@@ -1054,6 +1037,11 @@ function buscarClientePorIdentificacion(numero) {
                 // Almacenar resultados para auto-carga
                 resultadosBusquedaClientes = response.data;
                 mostrarResultadosClientes(response.data, 'numero_identificacion');
+
+                // Auto-cargar si es resultado único (coincidencia exacta)
+                if (response.data.length === 1) {
+                    console.log('✨ Resultado único - listo para auto-carga');
+                }
             } else {
                 $('#clientes-resultado').addClass('hidden');
                 resultadosBusquedaClientes = [];
@@ -1090,6 +1078,11 @@ function buscarClientePorApellidos(termino) {
                 // Almacenar resultados para auto-carga
                 resultadosBusquedaClientes = response.data;
                 mostrarResultadosClientes(response.data, 'apellidos');
+
+                // Auto-cargar si es resultado único (coincidencia exacta)
+                if (response.data.length === 1) {
+                    console.log('✨ Resultado único - listo para auto-carga');
+                }
             } else {
                 $('#clientes-resultado').addClass('hidden');
                 resultadosBusquedaClientes = [];
