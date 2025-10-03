@@ -1120,7 +1120,10 @@ function cargarClienteEnFormulario(cliente) {
 BLOQUEAR EDICIÓN DE CLIENTE (Para Consumidor Final)
 =============================================*/
 function bloquearEdicionCliente() {
-    $('#cliente_tipo_identificacion_sri').prop('disabled', true);
+    // El select de tipo SIEMPRE queda habilitado para poder cambiar
+    $('#cliente_tipo_identificacion_sri').prop('disabled', false);
+
+    // Los demás campos se bloquean
     $('#cliente_numero_identificacion').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
     $('#cliente_nombres').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
     $('#cliente_apellidos').prop('readonly', true).addClass('bg-gray-100 cursor-not-allowed');
