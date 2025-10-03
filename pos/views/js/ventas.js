@@ -518,15 +518,23 @@ function inicializarEventos() {
         const tipo = $(this).val();
 
         if (tipo === '07') {
-            // Si selecciona Consumidor Final, cargar desde DB
+            // Si selecciona Consumidor Final, cargar desde DB y bloquear
             cargarConsumidorFinal();
         } else {
-            // Si cambia a otro tipo, habilitar edición y limpiar campos
+            // Si cambia a otro tipo (Cédula, RUC, Pasaporte, etc.)
+            // Habilitar todos los campos para edición
             desbloquearEdicionCliente();
-            limpiarFormularioCliente();
+
+            // Limpiar campos solo si venía de Consumidor Final
+            const clienteActual = $('#cliente-seleccionado-id').val();
+            if (!clienteActual || clienteSeleccionado?.tipo_identificacion_sri === '07') {
+                limpiarFormularioCliente();
+            }
 
             // Actualizar placeholder según tipo seleccionado
             actualizarPlaceholderIdentificacion(tipo);
+
+            showNotification('Campos habilitados para edición', 'info');
         }
     });
 
@@ -1103,13 +1111,13 @@ function cargarClienteEnFormulario(cliente) {
     // Marcar como cliente existente
     $('#cliente_estado').val('existente');
 
-    // Si es Consumidor Final (tipo_identificacion_sri = '07'), hacer campos de solo lectura
+    // Si es Consumidor Final, bloquear campos. Si no, habilitar edición
     if (cliente.tipo_identificacion_sri === '07') {
         bloquearEdicionCliente();
-        showNotification('✅ Consumidor Final cargado', 'success');
+        showNotification('✅ Consumidor Final cargado (solo lectura)', 'success');
     } else {
-        // Para clientes normales: solo lectura (no editable desde ventas)
-        bloquearEdicionCliente();
+        // Para clientes normales: permitir edición para actualizar datos
+        desbloquearEdicionCliente();
         showNotification('✅ Cliente cargado: ' + cliente.nombres + ' ' + cliente.apellidos, 'success');
     }
 
