@@ -438,9 +438,12 @@ function inicializarEventos() {
         let valor = $(this).val();
 
         // Filtrar caracteres según tipo de identificación
-        if (tipo === '05' || tipo === '04') {
-            // Cédula o RUC: solo números
+        if (tipo === '05' || tipo === '04' || tipo === '07') {
+            // Cédula, RUC o Consumidor Final: solo números
             valor = valor.replace(/[^0-9]/g, '');
+
+            // No limitar longitud - permitir ingresar más dígitos
+            // El límite se ajustará automáticamente según detección
         } else if (tipo === '06' || tipo === '08') {
             // Pasaporte o ID Exterior: alfanumérico
             valor = valor.replace(/[^a-zA-Z0-9]/g, '');
@@ -450,23 +453,39 @@ function inicializarEventos() {
         // Limpiar timeout anterior
         clearTimeout(timeoutBusquedaNumero);
 
-        // Auto-detectar tipo según longitud (solo si es numérico)
+        // Auto-detectar y cambiar tipo según longitud (solo si es numérico)
         const esNumerico = /^\d+$/.test(valor);
-        if (esNumerico) {
+        if (esNumerico && (tipo === '05' || tipo === '04' || tipo === '07')) {
             if (valor.length === 10) {
-                $('#cliente_tipo_identificacion_sri').val('05'); // Cédula
+                // 10 dígitos → cambiar a Cédula
+                if (tipo !== '05') {
+                    $('#cliente_tipo_identificacion_sri').val('05');
+                    actualizarPlaceholderIdentificacion('05');
+                }
                 // Validar cédula completa
                 validarIdentificacionCliente();
             } else if (valor.length === 13) {
-                $('#cliente_tipo_identificacion_sri').val('04'); // RUC
+                // 13 dígitos → cambiar a RUC
+                if (tipo !== '04') {
+                    $('#cliente_tipo_identificacion_sri').val('04');
+                    actualizarPlaceholderIdentificacion('04');
+                }
                 // Validar RUC completo
                 validarIdentificacionCliente();
-            } else {
-                // Limpiar validación visual si tiene menos de 10/13 dígitos
+            } else if (valor.length > 0 && valor.length < 10) {
+                // Menos de 10 dígitos - limpiar validación
                 $('#cliente_numero_identificacion').removeClass('border-red-500 border-green-500');
                 $('#cliente_error_identificacion').addClass('hidden');
+            } else if (valor.length > 10 && valor.length < 13) {
+                // Entre 10 y 13 dígitos - mostrar que es inválido
+                $('#cliente_numero_identificacion').removeClass('border-green-500').addClass('border-red-500');
+                $('#cliente_error_identificacion').removeClass('hidden').text('Ingrese 10 (Cédula) o 13 (RUC) dígitos');
+            } else if (valor.length > 13) {
+                // Más de 13 dígitos - mostrar error
+                $('#cliente_numero_identificacion').removeClass('border-green-500').addClass('border-red-500');
+                $('#cliente_error_identificacion').removeClass('hidden').text('Máximo 13 dígitos para RUC');
             }
-        } else {
+        } else if (!esNumerico && (tipo === '06' || tipo === '08')) {
             // Para pasaporte/ID exterior: validar longitud mínima
             if (valor.length >= 5) {
                 validarIdentificacionCliente();
@@ -1181,13 +1200,17 @@ function actualizarPlaceholderIdentificacion(tipo) {
     const $input = $('#cliente_numero_identificacion');
 
     if (tipo === '05') {
-        // Cédula
-        $input.attr('placeholder', 'Ej: 1721234567 (10 dígitos)');
-        $input.attr('maxlength', '10');
+        // Cédula - sin maxlength para permitir cambio automático a RUC
+        $input.attr('placeholder', 'Ej: 1721234567 (10 dígitos Cédula)');
+        $input.removeAttr('maxlength');
     } else if (tipo === '04') {
-        // RUC
-        $input.attr('placeholder', 'Ej: 1721234567001 (13 dígitos)');
-        $input.attr('maxlength', '13');
+        // RUC - sin maxlength para permitir cambio automático a Cédula
+        $input.attr('placeholder', 'Ej: 1721234567001 (13 dígitos RUC)');
+        $input.removeAttr('maxlength');
+    } else if (tipo === '07') {
+        // Consumidor Final
+        $input.attr('placeholder', 'Consumidor Final');
+        $input.removeAttr('maxlength');
     } else if (tipo === '06') {
         // Pasaporte
         $input.attr('placeholder', 'Ej: ABC123456');

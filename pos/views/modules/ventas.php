@@ -67,7 +67,7 @@ if (!isset($_SESSION['csrf_token'])) {
                         <!-- Número de Identificación -->
                         <div id="field-numero-id">
                             <label class="block text-xs font-medium mb-1 text-gray-700 dark:text-neutral-300">Nro. Identificación <span class="text-red-500">*</span></label>
-                            <input type="text" id="cliente_numero_identificacion" maxlength="13" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="6+ dígitos para buscar">
+                            <input type="text" id="cliente_numero_identificacion" class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-neutral-900 dark:border-neutral-600 dark:text-white" placeholder="Consumidor Final">
                             <div id="cliente_error_identificacion" class="hidden mt-1 text-xs text-red-600"></div>
                         </div>
 
