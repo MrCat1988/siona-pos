@@ -533,20 +533,55 @@ function inicializarEventos() {
     let autoCargarTimeout;
     $('#cliente_numero_identificacion, #cliente_apellidos').on('blur', function() {
         clearTimeout(autoCargarTimeout);
+        const valorBuscado = $(this).val().trim();
 
         // Esperar que la búsqueda AJAX termine y procesar
         autoCargarTimeout = setTimeout(function() {
             console.log('🔍 Verificando auto-carga:', {
                 resultados: resultadosBusquedaClientes.length,
+                valorBuscado: valorBuscado,
                 dropdown_visible: !$('#clientes-resultado').hasClass('hidden')
             });
 
-            // Auto-cargar si hay exactamente 1 resultado (coincidencia exacta)
-            if (resultadosBusquedaClientes.length === 1) {
-                console.log('📋 Auto-cargando cliente (resultado único)');
-                cargarClienteEnFormulario(resultadosBusquedaClientes[0]);
+            if (resultadosBusquedaClientes.length === 0) {
+                return; // No hay resultados
+            }
+
+            // Filtrar resultados por coincidencia exacta con el número ingresado
+            let coincidenciaExacta = null;
+
+            if (/^\d+$/.test(valorBuscado)) {
+                // Es numérico - buscar coincidencia exacta en numero_identificacion
+                const coincidencias = resultadosBusquedaClientes.filter(c =>
+                    c.numero_identificacion === valorBuscado
+                );
+
+                if (coincidencias.length === 1) {
+                    coincidenciaExacta = coincidencias[0];
+                    console.log('✅ Coincidencia exacta por número de identificación');
+                } else if (coincidencias.length > 1) {
+                    console.log('⚠️ Múltiples coincidencias exactas - usuario debe elegir');
+                } else if (resultadosBusquedaClientes.length === 1) {
+                    // Solo 1 resultado parcial
+                    coincidenciaExacta = resultadosBusquedaClientes[0];
+                    console.log('✅ Resultado único (coincidencia parcial)');
+                }
+            } else {
+                // Es texto (apellidos) - auto-cargar solo si hay 1 resultado
+                if (resultadosBusquedaClientes.length === 1) {
+                    coincidenciaExacta = resultadosBusquedaClientes[0];
+                    console.log('✅ Resultado único por apellidos');
+                }
+            }
+
+            // Auto-cargar si se encontró una coincidencia clara
+            if (coincidenciaExacta) {
+                console.log('📋 Auto-cargando cliente:', coincidenciaExacta.nombres, coincidenciaExacta.apellidos);
+                cargarClienteEnFormulario(coincidenciaExacta);
                 $('#clientes-resultado').addClass('hidden');
                 resultadosBusquedaClientes = [];
+            } else {
+                console.log('ℹ️ No se auto-carga - múltiples opciones disponibles');
             }
         }, 700); // Dar tiempo a que AJAX termine (500ms búsqueda + 200ms margen)
     });
